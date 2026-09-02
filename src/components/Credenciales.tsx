@@ -7,7 +7,7 @@ import { TEXTOS } from '../config';
 export function Credenciales() {
   return (
     <div className="contenedor">
-      <ul className="credenciales">
+      <ul role="list" className="credenciales">
         {TEXTOS.credenciales.map((c) => (
           <li key={c.dato}>
             <span className="credencial-dato">{c.dato}</span>

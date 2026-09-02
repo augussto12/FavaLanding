@@ -66,6 +66,13 @@ noscript {
   outline-offset: 2px;
 }
 
+/* Sobre el rojo, el anillo oscuro da 2.30:1 y no llega al 3:1 que pide
+   WCAG 2.2 SC 1.4.11 para indicadores de foco. En blanco da 4.95:1. */
+.banner :focus-visible,
+.pie :focus-visible {
+  outline-color: #fff;
+}
+
 /* ============================================================
    Contenedor y secciones
    ============================================================ */
@@ -128,12 +135,16 @@ noscript {
   position: relative;
   isolation: isolate;
   background: var(--marca);
+  /* El punto mas claro del degradado es #d92524: con el #e52928 institucional
+     el blanco de 14-18px daba 4.49:1 y no llegaba a AA. La diferencia no se
+     percibe y el eyebrow y la bajada pasan a 4.95:1. El logo y el titular, que
+     son texto grande, siguen sobre el rojo de marca sin problema. */
   background-image: radial-gradient(
       120% 90% at 15% 0%,
-      #f2453f 0%,
-      rgba(242, 69, 63, 0) 60%
+      #d92524 0%,
+      rgba(217, 37, 36, 0) 62%
     ),
-    linear-gradient(160deg, var(--marca) 0%, var(--marca-mas-oscuro) 100%);
+    linear-gradient(160deg, #c92221 0%, var(--marca-mas-oscuro) 100%);
   background-size: 190% 190%, 100% 100%;
   background-position: 0% 0%, 0% 0%;
   color: #fff;
@@ -175,7 +186,7 @@ noscript {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
+  color: #fff;
 }
 
 .banner .titular {
@@ -193,7 +204,7 @@ noscript {
   margin-top: var(--e-4);
   max-width: 34ch;
   font-size: var(--t-m);
-  color: rgba(255, 255, 255, 0.94);
+  color: #fff;
 }
 
 .flecha-abajo {
@@ -206,6 +217,12 @@ noscript {
 .credenciales {
   display: grid;
   gap: 0;
+  /* El banner es position:relative + isolation:isolate, o sea que se pinta en
+     la capa de posicionados: sin z-index propio el rojo tapaba el tope de la
+     tarjeta y le mordia las esquinas. position:relative no rompe el colapso
+     de margenes que produce la monta. */
+  position: relative;
+  z-index: 1;
   /* Monta apenas sobre el banner: lo justo para que se lea como una
      sola pieza, sin quedar pegada al rojo. */
   margin-top: calc(var(--e-2) * -1);
@@ -228,7 +245,7 @@ noscript {
 
 .credencial-dato {
   flex: 0 0 auto;
-  min-width: 3.2ch;
+  min-width: 4.6ch;
   color: var(--marca-oscuro);
   font-size: var(--t-xl);
   font-weight: 800;
@@ -286,7 +303,6 @@ noscript {
 .seccion-registro {
   /* Menos aire arriba: el bloque anterior ya separa bastante. */
   padding-top: var(--e-5);
-  padding-bottom: var(--e-7);
   scroll-margin-top: var(--e-4);
 }
 
@@ -510,10 +526,6 @@ noscript {
   box-shadow: var(--sombra-m);
 }
 
-.boton-claro:hover {
-  background: var(--marca-tenue);
-  color: var(--marca-mas-oscuro);
-}
 
 /* ---- Aviso de error de envio ---- */
 .aviso {
@@ -758,7 +770,11 @@ noscript {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    /* Sin esto el escalonado sigue vivo: el CTA quedaba en opacity 0 durante
+       760 ms y el titular aparecia en siete golpes secos. */
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }
 
@@ -910,7 +926,13 @@ noscript {
 }
 
 @media (hover: hover) {
-  .boton-claro:hover {
+  /* :not(:disabled) para empatar en especificidad con .boton:hover:not(:disabled)
+     (0,3,0). Sin eso el fondo se iba a --marca-mas-oscuro con el texto tambien
+     en --marca-mas-oscuro: 1:1, la etiqueta desaparecia. Verificado forzando
+     el estado por CDP. */
+  .boton-claro:hover:not(:disabled) {
+    background: var(--marca-tenue);
+    color: var(--marca-mas-oscuro);
     transform: translateY(-2px);
     box-shadow: var(--sombra-l);
   }
@@ -980,5 +1002,14 @@ noscript {
       animation-timeline: view();
       animation-range: entry 25% entry 75%;
     }
+  }
+}
+
+/* El widget de Turnstile es un iframe de 300px fijos. Por debajo de 364px de
+   viewport no entra en la tarjeta y el borde de pantalla lo corta. */
+@media (max-width: 363px) {
+  .turnstile {
+    transform: scale(0.85);
+    transform-origin: left center;
   }
 }

@@ -5,7 +5,6 @@ import { Unidades } from './components/Unidades';
 import { Formulario } from './components/Formulario';
 import { PieDePagina } from './components/PieDePagina';
 import { iniciarCola } from './lib/cola';
-import { TEXTOS } from './config';
 
 export default function App() {
   // La cola arranca con la app: si quedaron pendientes de una visita anterior
@@ -24,13 +23,12 @@ export default function App() {
         <Credenciales />
         <Unidades />
 
-        <section className="seccion seccion-registro" id="registro" aria-labelledby="registro-titulo">
+        {/* El titulo vive dentro de Formulario, no aca: al pasar a exito tiene
+            que irse con el resto. Si no, la tarjeta queda diciendo "Dejanos tus
+            datos" arriba de un "¡Listo!" y con dos h2 en la misma seccion. */}
+        <section className="seccion seccion-registro" id="registro" aria-label="Registro">
           <div className="contenedor">
             <div className="tarjeta">
-              <h2 className="seccion-titulo" id="registro-titulo">
-                {TEXTOS.formularioTitulo}
-              </h2>
-              <p className="seccion-apoyo">{TEXTOS.formularioApoyo}</p>
               <Formulario />
             </div>
           </div>

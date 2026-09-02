@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -16,7 +16,10 @@ import { GENEROS, LOCALIDAD_DEFECTO, LOCALIDADES } from '../data/localidades';
 import { ORIGEN, TEXTOS, TURNSTILE_ACTIVO } from '../config';
 
 type Estado = 'idle' | 'enviando' | 'exito' | 'error';
-type TipoError = 'red' | 'servidor' | 'validacion';
+/* Sin 'red': un error de red nunca llega hasta aca. Los reintentos se agotan
+   dentro de enviar(), el payload va a la cola offline y el visitante ve la
+   pantalla de exito, porque su parte terminó. */
+type TipoError = 'servidor' | 'validacion';
 
 const OPCIONES_GENERO = GENEROS.map((g) => ({ valor: g, etiqueta: g }));
 
@@ -38,6 +41,8 @@ export function Formulario() {
   // asi el doble tap del que cree que se colgo no genera dos filas.
   const submissionId = useRef(nuevoId());
   const turnstileToken = useRef('');
+  const volverAlFormulario = useRef(false);
+  const aviso = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -51,6 +56,30 @@ export function Formulario() {
     defaultValues: { ...VALORES_INICIALES, localidad: LOCALIDAD_DEFECTO },
     mode: 'onTouched',
   });
+
+  // Al pasar a exito la tarjeta se achica varios cientos de px y el documento
+  // queda mas corto que el scroll actual: la pagina saltaba hacia arriba justo
+  // despues del tap. Se reancla la seccion.
+  useEffect(() => {
+    if (estado !== 'exito') return;
+    document.getElementById('registro')?.scrollIntoView({ block: 'start' });
+  }, [estado]);
+
+  // El foco vuelve al primer campo recien cuando el input existe de nuevo:
+  // llamarlo dentro de cargarOtra apuntaba a un nodo ya desmontado.
+  useEffect(() => {
+    if (estado === 'idle' && volverAlFormulario.current) {
+      volverAlFormulario.current = false;
+      setFocus('nombre');
+    }
+  }, [estado, setFocus]);
+
+  // El aviso se inserta ARRIBA del boton y lo empuja fuera de pantalla.
+  useEffect(() => {
+    if (errorEnvio?.tipo === 'servidor') {
+      aviso.current?.scrollIntoView({ block: 'center' });
+    }
+  }, [errorEnvio]);
 
   const recibirToken = useCallback((t: string) => {
     turnstileToken.current = t;
@@ -118,153 +147,167 @@ export function Formulario() {
     setErrorEnvio(null);
     setEnCola(false);
     setEstado('idle');
-    setFocus('nombre');
-  }
-
-  if (estado === 'exito') {
-    return (
-      <>
-        <div aria-live="polite" className="solo-lectores">
-          Datos enviados correctamente.
-        </div>
-        <Exito email={emailEnviado} enCola={enCola} onOtra={cargarOtra} />
-      </>
-    );
+    // El foco va en un efecto, no aca: en este punto el input todavia no se
+    // remonto y setFocus caeria sobre un nodo que ya no existe.
+    volverAlFormulario.current = true;
   }
 
   const enviando = estado === 'enviando';
 
+  const anuncio =
+    estado === 'enviando'
+      ? 'Enviando tus datos, esperá un momento.'
+      : estado === 'exito'
+        ? 'Listo, tus datos se enviaron. Te mandamos un mail de confirmación.'
+        : errorEnvio?.tipo === 'servidor'
+          ? 'No pudimos enviar los datos.'
+          : '';
+
   return (
-    <form className="formulario" onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
-      <div className="fila">
-        <Campo
-          id="nombre"
-          etiqueta="Nombre"
-          type="text"
-          autoComplete="given-name"
-          autoCapitalize="words"
-          enterKeyHint="next"
-          error={errors.nombre?.message}
-          {...register('nombre')}
-        />
-        <Campo
-          id="apellido"
-          etiqueta="Apellido"
-          type="text"
-          autoComplete="family-name"
-          autoCapitalize="words"
-          enterKeyHint="next"
-          error={errors.apellido?.message}
-          {...register('apellido')}
-        />
-      </div>
-
-      <Campo
-        id="email"
-        etiqueta="Email"
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        autoCapitalize="none"
-        spellCheck={false}
-        enterKeyHint="next"
-        placeholder="nombre@gmail.com"
-        error={errors.email?.message}
-        {...register('email')}
-      />
-
-      <div className="fila">
-        <Campo
-          id="dni"
-          etiqueta="DNI"
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          autoComplete="off"
-          maxLength={10}
-          enterKeyHint="next"
-          placeholder="12345678"
-          ayuda="Sin puntos"
-          error={errors.dni?.message}
-          {...register('dni')}
-        />
-        <Campo
-          id="telefono"
-          etiqueta="Teléfono"
-          opcional
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          enterKeyHint="next"
-          placeholder="223 5123456"
-          error={errors.telefono?.message}
-          {...register('telefono')}
-        />
-      </div>
-
-      <SelectCampo
-        id="localidad"
-        etiqueta="Localidad"
-        opcional
-        opciones={LOCALIDADES}
-        error={errors.localidad?.message}
-        {...register('localidad')}
-      />
-
-      <SelectCampo
-        id="genero"
-        etiqueta="Género"
-        opcional
-        opciones={OPCIONES_GENERO}
-        error={errors.genero?.message}
-        {...register('genero')}
-      />
-
-      <div className="grupo-consentimiento">
-      <div className={`consentimiento${errors.consentimiento ? ' invalido' : ''}`}>
-        <span className="caja-check">
-          <input
-            id="consentimiento"
-            type="checkbox"
-            aria-invalid={errors.consentimiento ? true : undefined}
-            aria-describedby={errors.consentimiento ? 'consentimiento-error' : undefined}
-            {...register('consentimiento')}
-          />
-        </span>
-        <label htmlFor="consentimiento">
-          {TEXTOS.consentimiento}{' '}
-          {TEXTOS.politicaUrl && (
-            <a href={TEXTOS.politicaUrl} target="_blank" rel="noreferrer">
-              Política de privacidad
-            </a>
-          )}
-        </label>
-      </div>
-      {errors.consentimiento && (
-        <span className="mensaje-error" id="consentimiento-error">
-          {errors.consentimiento.message}
-        </span>
-      )}
-      </div>
-
-      <Turnstile onToken={recibirToken} resetKey={resetTurnstile} />
-
-      {errorEnvio && errorEnvio.tipo !== 'validacion' && (
-        <div className="aviso" role="alert">
-          <strong>No pudimos enviar los datos.</strong>
-          {errorEnvio.tipo === 'servidor'
-            ? ` ${TEXTOS.contactoStand}`
-            : ' Probá de nuevo en unos segundos.'}
-        </div>
-      )}
-
-      <button type="submit" className="boton" disabled={enviando}>
-        {enviando ? TEXTOS.botonEnviando : TEXTOS.botonEnviar}
-      </button>
-
+    <>
+      {/* La region viva vive SIEMPRE montada. Si apareciera junto con su
+          texto, el lector de pantalla no anunciaria nada. */}
       <div aria-live="polite" className="solo-lectores">
-        {enviando ? 'Enviando tus datos, esperá un momento.' : ''}
+        {anuncio}
       </div>
-    </form>
+
+      {estado === 'exito' ? (
+        <Exito email={emailEnviado} enCola={enCola} onOtra={cargarOtra} />
+      ) : (
+        <>
+          <h2 className="seccion-titulo">{TEXTOS.formularioTitulo}</h2>
+          <p className="seccion-apoyo">{TEXTOS.formularioApoyo}</p>
+          <form className="formulario" onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
+            <div className="fila">
+              <Campo
+                id="nombre"
+                etiqueta="Nombre"
+                type="text"
+                autoComplete="given-name"
+                autoCapitalize="words"
+                enterKeyHint="next"
+                error={errors.nombre?.message}
+                {...register('nombre')}
+              />
+              <Campo
+                id="apellido"
+                etiqueta="Apellido"
+                type="text"
+                autoComplete="family-name"
+                autoCapitalize="words"
+                enterKeyHint="next"
+                error={errors.apellido?.message}
+                {...register('apellido')}
+              />
+            </div>
+
+            <Campo
+              id="email"
+              etiqueta="Email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              enterKeyHint="next"
+              placeholder="nombre@gmail.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+
+            <div className="fila">
+              <Campo
+                id="dni"
+                etiqueta="DNI"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                maxLength={10}
+                enterKeyHint="next"
+                placeholder="12345678"
+                ayuda="Sin puntos"
+                error={errors.dni?.message}
+                {...register('dni')}
+              />
+              <Campo
+                id="telefono"
+                etiqueta="Teléfono"
+                opcional
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                enterKeyHint="next"
+                placeholder="223 5123456"
+                error={errors.telefono?.message}
+                {...register('telefono')}
+              />
+            </div>
+
+            <SelectCampo
+              id="localidad"
+              etiqueta="Localidad"
+              opcional
+              opciones={LOCALIDADES}
+              error={errors.localidad?.message}
+              {...register('localidad')}
+            />
+
+            <SelectCampo
+              id="genero"
+              etiqueta="Género"
+              opcional
+              opciones={OPCIONES_GENERO}
+              error={errors.genero?.message}
+              {...register('genero')}
+            />
+
+            <div className="grupo-consentimiento">
+            <div className={`consentimiento${errors.consentimiento ? ' invalido' : ''}`}>
+              <span className="caja-check">
+                <input
+                  id="consentimiento"
+                  type="checkbox"
+                  aria-invalid={errors.consentimiento ? true : undefined}
+                  aria-describedby={errors.consentimiento ? 'consentimiento-error' : undefined}
+                  {...register('consentimiento')}
+                />
+              </span>
+              <label htmlFor="consentimiento">
+                {TEXTOS.consentimiento}{' '}
+                {TEXTOS.politicaUrl && (
+                  <a href={TEXTOS.politicaUrl} target="_blank" rel="noreferrer">
+                    Política de privacidad
+                  </a>
+                )}
+              </label>
+            </div>
+            {errors.consentimiento && (
+              <span className="mensaje-error" id="consentimiento-error">
+                {errors.consentimiento.message}
+              </span>
+            )}
+            </div>
+
+            <Turnstile onToken={recibirToken} resetKey={resetTurnstile} />
+
+            {/* El motivo real, no siempre el mismo cartel: el script devuelve
+                mensajes utiles como "No pudimos verificar que seas una persona",
+                que le dicen a la persona si vale la pena volver a intentar. */}
+            {errorEnvio?.tipo === 'servidor' && (
+              <div className="aviso" role="alert" ref={aviso}>
+                <strong>No pudimos enviar los datos.</strong>
+                {errorEnvio.mensaje}. {TEXTOS.contactoStand}
+              </div>
+            )}
+
+            <button type="submit" className="boton" disabled={enviando}>
+              {enviando ? TEXTOS.botonEnviando : TEXTOS.botonEnviar}
+            </button>
+
+          </form>
+        </>
+      )}
+    </>
   );
 }
