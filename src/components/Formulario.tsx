@@ -220,14 +220,17 @@ export function Formulario() {
         {...register('genero')}
       />
 
+      <div className="grupo-consentimiento">
       <div className={`consentimiento${errors.consentimiento ? ' invalido' : ''}`}>
-        <input
-          id="consentimiento"
-          type="checkbox"
-          aria-invalid={errors.consentimiento ? true : undefined}
-          aria-describedby={errors.consentimiento ? 'consentimiento-error' : undefined}
-          {...register('consentimiento')}
-        />
+        <span className="caja-check">
+          <input
+            id="consentimiento"
+            type="checkbox"
+            aria-invalid={errors.consentimiento ? true : undefined}
+            aria-describedby={errors.consentimiento ? 'consentimiento-error' : undefined}
+            {...register('consentimiento')}
+          />
+        </span>
         <label htmlFor="consentimiento">
           {TEXTOS.consentimiento}{' '}
           {TEXTOS.politicaUrl && (
@@ -242,6 +245,7 @@ export function Formulario() {
           {errors.consentimiento.message}
         </span>
       )}
+      </div>
 
       <Turnstile onToken={recibirToken} resetKey={resetTurnstile} />
 

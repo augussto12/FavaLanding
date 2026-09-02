@@ -1,19 +1,48 @@
 /**
- * Todo el texto que Fava todavia tiene que confirmar vive aca, en un solo
- * lugar, para que cambiarlo no obligue a tocar componentes.
+ * Todo el copy vive aca, en un solo lugar, para que cambiarlo no obligue a
+ * tocar componentes.
  *
- * PENDIENTE DE CLIENTE (ver README, seccion "Pendientes"):
- *   - titular y apoyo definitivos
- *   - texto exacto del consentimiento, revisado por ellos
- *   - URL de la politica de privacidad
+ * OJO, PENDIENTE DE CLIENTE: los textos de `unidades` y el titular son
+ * placeholders escritos por nosotros a partir del relevamiento. Los datos
+ * duros (1909, marplatense, 40 sucursales, las tres unidades) vienen del
+ * brief; las descripciones de cada unidad NO estan confirmadas por Fava.
+ * Antes de publicar, que las revisen ellos.
  */
 export const TEXTOS = {
-  titular: 'Dejanos tus datos',
-  apoyo: 'Te avisamos de las promos y novedades de Grupo Fava antes que a nadie.',
+  // ---- Banner ----
+  eyebrow: 'Desde 1909',
+  titular: 'Cerca tuyo\ndesde hace\n117 años',
+  apoyo:
+    'Dejanos tus datos y enterate antes que nadie de las promos, beneficios y novedades de Grupo Fava.',
+  cta: 'Dejar mis datos',
 
-  panelTitulo: 'Cerca tuyo desde 1909.',
-  panelApoyo: '40 sucursales en la Provincia de Buenos Aires.',
-  panelPie: 'Fava Paseo de Compras · Tarjeta Favacard · Préstamos Muy',
+  // ---- Credenciales ----
+  credenciales: [
+    { dato: '1909', detalle: 'Fundada en Mar del Plata' },
+    { dato: '40', detalle: 'Sucursales en la Provincia' },
+    { dato: '3', detalle: 'Unidades de negocio' },
+  ],
+
+  // ---- Unidades de negocio (descripciones sin confirmar) ----
+  unidadesTitulo: 'Tres formas de estar cerca',
+  unidades: [
+    {
+      nombre: 'Fava Paseo de Compras',
+      detalle: 'Indumentaria, hogar y tecnología en las 40 sucursales del grupo.',
+    },
+    {
+      nombre: 'Tarjeta Favacard',
+      detalle: 'La tarjeta regional, con beneficios en los comercios adheridos.',
+    },
+    {
+      nombre: 'Préstamos Muy',
+      detalle: 'Préstamos personales, simples y resueltos cerca de casa.',
+    },
+  ],
+
+  // ---- Formulario ----
+  formularioTitulo: 'Dejanos tus datos',
+  formularioApoyo: 'Es un minuto. Te llega un mail de confirmación al instante.',
 
   consentimiento:
     'Autorizo a Grupo Fava a guardar mis datos y a contactarme con novedades y promociones. Puedo pedir la baja cuando quiera.',
@@ -24,8 +53,13 @@ export const TEXTOS = {
   botonEnviar: 'Enviar mis datos',
   botonEnviando: 'Enviando…',
 
+  // ---- Exito ----
   exitoTitulo: '¡Listo!',
   exitoOtra: 'Cargar otra respuesta',
+
+  // ---- Pie ----
+  piePrincipal: 'Grupo Fava · Mar del Plata',
+  pieSecundario: 'Fava Paseo de Compras · Tarjeta Favacard · Préstamos Muy',
 
   /** A quien avisar si algo falla durante el evento. */
   contactoStand: 'Avisale a alguien del stand y lo cargamos a mano.',

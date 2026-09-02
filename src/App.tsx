@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
-import { LogoFava } from './components/LogoFava';
+import { Banner } from './components/Banner';
+import { Credenciales } from './components/Credenciales';
+import { Unidades } from './components/Unidades';
 import { Formulario } from './components/Formulario';
+import { PieDePagina } from './components/PieDePagina';
 import { iniciarCola } from './lib/cola';
 import { TEXTOS } from './config';
 
@@ -10,30 +13,31 @@ export default function App() {
   useEffect(() => iniciarCola(() => {}), []);
 
   return (
-    <div className="app">
-      {/* Barra de marca solo en mobile; en 768+ manda el panel lateral. */}
-      <header className="marca-barra">
-        <LogoFava className="logo" />
-      </header>
+    <>
+      <a className="saltar" href="#registro">
+        Ir directo al formulario
+      </a>
 
-      <main className="principal">
-        <aside className="panel-marca">
-          <LogoFava className="logo" />
-          <div>
-            <p className="titular">{TEXTOS.panelTitulo}</p>
-            <p className="apoyo">{TEXTOS.panelApoyo}</p>
-          </div>
-          <p className="desde">{TEXTOS.panelPie}</p>
-        </aside>
+      <Banner />
 
-        <div className="columna">
-          <div className="columna-interior">
-            <h1 className="titular">{TEXTOS.titular}</h1>
-            <p className="apoyo">{TEXTOS.apoyo}</p>
-            <Formulario />
+      <main>
+        <Credenciales />
+        <Unidades />
+
+        <section className="seccion seccion-registro" id="registro" aria-labelledby="registro-titulo">
+          <div className="contenedor">
+            <div className="tarjeta">
+              <h2 className="seccion-titulo" id="registro-titulo">
+                {TEXTOS.formularioTitulo}
+              </h2>
+              <p className="seccion-apoyo">{TEXTOS.formularioApoyo}</p>
+              <Formulario />
+            </div>
           </div>
-        </div>
+        </section>
       </main>
-    </div>
+
+      <PieDePagina />
+    </>
   );
 }

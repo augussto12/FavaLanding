@@ -69,3 +69,19 @@
 
   --ancho-form: 480px;
 }
+
+/* Superficies y profundidad. Sombras tenues y calidas: la marca es rojo
+   sobre papel, un gris azulado las ensucia. */
+:root {
+  --radio-l: 18px;
+  --radio-xl: 26px;
+
+  --sombra-s: 0 1px 2px rgba(28, 25, 23, 0.05), 0 1px 3px rgba(28, 25, 23, 0.07);
+  --sombra-m: 0 2px 4px rgba(28, 25, 23, 0.05), 0 8px 20px rgba(28, 25, 23, 0.07);
+  --sombra-l: 0 4px 10px rgba(28, 25, 23, 0.06), 0 20px 45px rgba(28, 25, 23, 0.11);
+
+  --ancho-pagina: 1120px;
+
+  /* Canaleta lateral, con las muescas del telefono contempladas. */
+  --canaleta: 1rem;
+}
