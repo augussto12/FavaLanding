@@ -1,0 +1,71 @@
+/*
+  Tokens de marca Grupo Fava.
+
+  Origen: https://fava.esmundial.com.ar/staff/index.php
+  El rojo #e52928 es el institucional (navbar, titulos de marca, logo).
+  El celeste/dorado que tiene ese sitio en :root es de la campana del
+  torneo de predicciones, NO de la identidad del grupo: no se usa aca.
+
+  Contraste verificado contra --papel (#fff), formula WCAG 2.1:
+    marca            #e52928  4.49:1  -> solo superficies grandes y logo
+    marca-oscuro     #b81f1e  6.46:1  -> texto, bordes y boton
+    marca-mas-oscuro #8f1817  9.4:1   -> hover/active del boton
+    tinta            #1c1917  16.3:1
+    tinta-suave      #5c5350  7.48:1
+    error            #b3261e  6.54:1
+    exito            #15803d  5.02:1
+*/
+
+:root {
+  color-scheme: light;
+
+  --marca: #e52928;
+  --marca-oscuro: #b81f1e;
+  --marca-mas-oscuro: #8f1817;
+  --marca-tenue: #fdeceb;
+
+  --acento: var(--marca-oscuro);
+
+  --tinta: #1c1917;
+  --tinta-suave: #5c5350;
+
+  --papel: #ffffff;
+  --fondo: #f6f4f3;
+  --borde: #d6d1ce;
+  --borde-fuerte: #8a8380;
+
+  --error: #b3261e;
+  --error-fondo: #fdeceb;
+  --exito: #15803d;
+  --exito-fondo: #ecfdf3;
+
+  --foco: #1c1917;
+
+  /* Escala tipografica, base 16px */
+  --t-xs: 0.875rem;
+  --t-s: 1rem;
+  --t-m: 1.125rem;
+  --t-l: 1.5rem;
+  --t-xl: 2rem;
+  --t-xxl: 2.5rem;
+
+  /* Ritmo vertical */
+  --e-1: 0.25rem;
+  --e-2: 0.5rem;
+  --e-3: 0.75rem;
+  --e-4: 1rem;
+  --e-5: 1.5rem;
+  --e-6: 2rem;
+  --e-7: 3rem;
+
+  --radio: 10px;
+  --radio-s: 6px;
+
+  /* 44px es el minimo tactil; en un stand la gente esta de pie y apurada. */
+  --tactil: 44px;
+
+  --fuente: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  --ancho-form: 480px;
+}
