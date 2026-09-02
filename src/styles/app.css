@@ -134,6 +134,8 @@ noscript {
       rgba(242, 69, 63, 0) 60%
     ),
     linear-gradient(160deg, var(--marca) 0%, var(--marca-mas-oscuro) 100%);
+  background-size: 190% 190%, 100% 100%;
+  background-position: 0% 0%, 0% 0%;
   color: #fff;
   overflow: hidden;
 }
@@ -763,15 +765,67 @@ noscript {
 /* ============================================================
    Movimiento
 
-   Tres gestos y nada mas: la entrada escalonada del banner, la flechita
-   que invita a bajar, y el material que aparece al entrar en cuadro.
-   Todo se apaga entero con prefers-reduced-motion, mas arriba.
+   Una sola familia de gestos: todo sube y se revela. Nada gira, nada
+   rebota, nada parpadea. La marca tiene 117 años, no es una startup.
+
+   Cero JavaScript: la entrada usa la linea de tiempo del documento y las
+   apariciones usan animation-timeline: view(). Donde no hay soporte
+   (Safari hoy) el contenido se ve normal desde el principio.
+
+   Todo se apaga entero con prefers-reduced-motion, mas arriba en el archivo.
    ============================================================ */
 
+/* ---- El fondo del banner respira ---- */
+@keyframes respirar {
+  to {
+    background-position: 45% 35%, 0% 0%;
+  }
+}
+
+.banner {
+  animation: respirar 16s ease-in-out infinite alternate;
+}
+
+/* ---- Titular: cada linea sube desde atras de su mascara ---- */
+@keyframes revelar {
+  from {
+    transform: translateY(108%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.banner .titular .linea {
+  display: block;
+  overflow: hidden;
+  /* El padding compensado evita que la mascara corte las colas de la y. */
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+}
+
+.banner .titular .linea > span {
+  display: block;
+  animation: revelar 1000ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.banner .titular .linea:nth-child(1) > span {
+  animation-delay: 120ms;
+}
+
+.banner .titular .linea:nth-child(2) > span {
+  animation-delay: 240ms;
+}
+
+.banner .titular .linea:nth-child(3) > span {
+  animation-delay: 360ms;
+}
+
+/* ---- El resto del banner entra escalonado detras del titular ---- */
 @keyframes subir {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(26px);
   }
   to {
     opacity: 1;
@@ -779,47 +833,69 @@ noscript {
   }
 }
 
-.banner-cuerpo > * {
-  animation: subir 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+.banner-cuerpo > :not(.titular) {
+  animation: subir 780ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .banner-logo {
-  animation-delay: 40ms;
+  animation-delay: 60ms;
 }
 
 .eyebrow {
-  animation-delay: 150ms;
-}
-
-.banner .titular {
-  animation-delay: 240ms;
+  animation-delay: 200ms;
 }
 
 .banner .apoyo {
-  animation-delay: 340ms;
+  animation-delay: 620ms;
 }
 
 .banner .boton-claro {
-  animation-delay: 440ms;
+  animation-delay: 760ms;
 }
 
-/* La flecha respira para que se entienda que hay pagina para abajo. */
+/* ---- El CTA late una vez montado, para que se lea como "tocame" ---- */
+@keyframes pulso {
+  0% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.14);
+  }
+}
+
+.banner .boton-claro {
+  position: relative;
+}
+
+.banner .boton-claro::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: calc(var(--radio) + 3px);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  animation: pulso 2800ms ease-out 1600ms infinite;
+}
+
+/* ---- La flecha invita a bajar ---- */
 @keyframes flechita {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(3px);
+    transform: translateY(4px);
   }
 }
 
 .flecha-abajo {
-  animation: flechita 1900ms ease-in-out 1400ms infinite;
+  animation: flechita 1900ms ease-in-out 1600ms infinite;
 }
 
-/* Micro-interacciones. Solo donde hay puntero de verdad: en el stand se
-   toca con el dedo y un hover pegado es peor que ninguno. */
+/* ---- Micro-interacciones, solo donde hay puntero de verdad ---- */
 .boton,
 .boton-claro,
 .unidad,
@@ -829,35 +905,54 @@ noscript {
     background-color 160ms ease,
     border-color 160ms ease,
     color 160ms ease,
-    box-shadow 200ms ease,
-    transform 160ms ease;
+    box-shadow 220ms ease,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (hover: hover) {
   .boton-claro:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: var(--sombra-l);
   }
 
   .unidad:hover {
     border-color: var(--marca);
     box-shadow: var(--sombra-m);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
   }
 }
 
-/* Aparicion al entrar en cuadro, sin una linea de JS. Donde el navegador
-   no soporta timelines de scroll (Safari hoy) no pasa nada: el contenido
-   se ve normal desde el principio. */
+/* ---- Aparicion al entrar en cuadro, atada al scroll ---- */
 @keyframes aparecer {
   from {
     opacity: 0;
-    transform: translateY(22px);
+    transform: translateY(38px) scale(0.975);
   }
   to {
     opacity: 1;
     transform: none;
   }
+}
+
+@keyframes regla {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* La regla roja bajo cada titulo de seccion se dibuja sola. */
+.seccion-titulo::after {
+  content: '';
+  display: block;
+  width: 52px;
+  height: 4px;
+  margin-top: var(--e-3);
+  border-radius: 2px;
+  background: var(--marca);
+  transform-origin: left center;
 }
 
 @supports (animation-timeline: view()) {
@@ -867,7 +962,23 @@ noscript {
     .tarjeta {
       animation: aparecer linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 50%;
+      /* Rango largo a proposito: si termina apenas asoma, no se ve pasar. */
+      animation-range: entry 10% entry 85%;
+    }
+
+    /* Las tres tarjetas entran en cascada, no de golpe. */
+    .unidad:nth-child(2) {
+      animation-range: entry 18% entry 93%;
+    }
+
+    .unidad:nth-child(3) {
+      animation-range: entry 26% entry 100%;
+    }
+
+    .seccion-titulo::after {
+      animation: regla linear both;
+      animation-timeline: view();
+      animation-range: entry 25% entry 75%;
     }
   }
 }

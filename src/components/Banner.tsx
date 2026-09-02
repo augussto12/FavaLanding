@@ -15,9 +15,13 @@ export function Banner() {
 
         <p className="eyebrow">{TEXTOS.eyebrow}</p>
 
+        {/* Cada linea va dentro de su propia mascara: el span interno sube
+            desde abajo y la mascara lo recorta. Es el gesto principal. */}
         <h1 className="titular">
           {TEXTOS.titular.split('\n').map((linea, i) => (
-            <span key={i}>{linea}</span>
+            <span className="linea" key={i}>
+              <span>{linea}</span>
+            </span>
           ))}
         </h1>
 
