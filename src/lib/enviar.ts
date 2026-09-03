@@ -1,8 +1,18 @@
 import type { Payload } from './schema';
 import { ErrorRed, ErrorServidor, ErrorValidacion, esErrorDeRed, esperar } from './errores';
 
-const TIMEOUT_MS = 15_000;
-const REINTENTOS = 2;
+/*
+ * 8 s y un solo reintento, no 15 s y dos.
+ *
+ * El razonamiento: existe la cola offline. Si esto falla, el dato NO se
+ * pierde, queda en el telefono y sale solo cuando vuelve la señal. Insistir
+ * 45 segundos con la persona mirando la pantalla no gana casi nada y cuesta
+ * mucho, en una interaccion que dura 30 a 90 segundos con gente esperando.
+ *
+ * Peor caso ahora: 8 + 1 + 8 = 17 s, contra los 48 de antes.
+ */
+const TIMEOUT_MS = 8_000;
+const REINTENTOS = 1;
 
 type Respuesta = {
   ok: boolean;

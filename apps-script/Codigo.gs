@@ -429,13 +429,93 @@ function verPendientes() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Presentacion de la planilla                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Deja la hoja de registros presentable: cabecera fija y marcada, y anchos
+ * de columna que no obliguen a estirar todo a mano.
+ */
+function formatearPlanilla() {
+  var h = hoja();
+  var cab = h.getRange(1, 1, 1, CABECERAS.length);
+  cab.setFontWeight('bold').setFontColor('#ffffff').setBackground('#b81f1e');
+  h.setFrozenRows(1);
+
+  // Fecha, Nombre, Apellido, DNI, Telefono, Email, Estudios, Anio, Camino,
+  // Consent., Origen, SubmissionId, MailEnviado
+  var anchos = [140, 110, 110, 90, 110, 210, 190, 120, 110, 100, 110, 230, 150];
+  for (var i = 0; i < anchos.length && i < CABECERAS.length; i++) {
+    h.setColumnWidth(i + 1, anchos[i]);
+  }
+}
+
+/**
+ * Hoja "Resumen" con formulas vivas: se actualiza sola a medida que entran
+ * registros. Es lo que Fava va a querer mirar al final del dia, no fila por
+ * fila. El reparto por camino es el sentido de toda la dinamica del stand.
+ */
+function armarResumen() {
+  var libro = SpreadsheetApp.openById(prop('SHEET_ID', ''));
+  var reg = prop('HOJA', 'Registros');
+  var r = libro.getSheetByName('Resumen');
+  if (!r) r = libro.insertSheet('Resumen', 0);
+  r.clear();
+
+  var filas = [];
+  var titulos = [];
+
+  filas.push(['Expo UFASTA — Grupo Fava', '']);
+  titulos.push(filas.length);
+  filas.push(['', '']);
+
+  filas.push(['Registros totales', '=COUNTA(' + reg + '!A2:A)']);
+  filas.push([
+    'Mails enviados',
+    '=COUNTA(' + reg + '!M2:M)-COUNTIF(' + reg + '!M2:M,"ERROR*")',
+  ]);
+  filas.push([
+    'Mails pendientes',
+    '=COUNTA(' + reg + '!A2:A)-COUNTA(' + reg + '!M2:M)',
+  ]);
+  filas.push(['Mails con error', '=COUNTIF(' + reg + '!M2:M,"ERROR*")']);
+  filas.push(['', '']);
+
+  filas.push(['Por camino elegido', '']);
+  titulos.push(filas.length);
+  for (var i = 0; i < CAMINOS.length; i++) {
+    filas.push([CAMINOS[i], '=COUNTIF(' + reg + '!I2:I,"' + CAMINOS[i] + '")']);
+  }
+  filas.push(['', '']);
+
+  filas.push(['Por año de carrera', '']);
+  titulos.push(filas.length);
+  for (var j = 0; j < ANIOS.length; j++) {
+    filas.push([ANIOS[j], '=COUNTIF(' + reg + '!H2:H,"' + ANIOS[j] + '")']);
+  }
+
+  r.getRange(1, 1, filas.length, 2).setValues(filas);
+
+  r.getRange(1, 1).setFontSize(14).setFontWeight('bold').setFontColor('#b81f1e');
+  for (var k = 0; k < titulos.length; k++) {
+    r.getRange(titulos[k], 1, 1, 2).setFontWeight('bold').setBackground('#f6f4f3');
+  }
+  r.getRange(1, 2, filas.length, 1).setHorizontalAlignment('right');
+  r.setColumnWidth(1, 230);
+  r.setColumnWidth(2, 110);
+  r.setHiddenGridlines(true);
+}
+
+/* ------------------------------------------------------------------ */
 /* Utilidades para correr a mano desde el editor                       */
 /* ------------------------------------------------------------------ */
 
 /** Crea la pestaña con las cabeceras. Correr una vez al configurar. */
 function inicializarPlanilla() {
   hoja();
-  console.log('Planilla lista');
+  formatearPlanilla();
+  armarResumen();
+  console.log('Planilla lista: hoja de registros formateada y Resumen creado');
 }
 
 /** Cuanto margen de mails queda hoy. Correr el dia previo al evento. */

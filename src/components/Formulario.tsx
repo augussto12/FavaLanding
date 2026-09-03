@@ -19,8 +19,12 @@ import { ORIGEN, TEXTOS, TURNSTILE_ACTIVO } from '../config';
 type Estado = 'idle' | 'enviando' | 'exito' | 'error';
 /* Sin 'red': un error de red nunca llega hasta aca. Los reintentos se agotan
    dentro de enviar(), el payload va a la cola offline y el visitante ve la
-   pantalla de exito, porque su parte terminó. */
-type TipoError = 'servidor' | 'validacion';
+   pantalla de exito, porque su parte terminó.
+
+   'verificacion' es Turnstile que no llego a dar token. Se separa de
+   'servidor' porque se resuelve tocando Enviar de nuevo, y el cartel tiene
+   que decir eso en vez de mandar a buscar a alguien del stand. */
+type TipoError = 'servidor' | 'validacion' | 'verificacion';
 
 const OPCIONES_ANIO = ANIOS_CARRERA.map((a) => ({ valor: a, etiqueta: a }));
 
@@ -77,7 +81,7 @@ export function Formulario() {
 
   // El aviso se inserta ARRIBA del boton y lo empuja fuera de pantalla.
   useEffect(() => {
-    if (errorEnvio?.tipo === 'servidor') {
+    if (errorEnvio && errorEnvio.tipo !== 'validacion') {
       aviso.current?.scrollIntoView({ block: 'center' });
     }
   }, [errorEnvio]);
@@ -86,10 +90,10 @@ export function Formulario() {
     turnstileToken.current = t;
   }, []);
 
-  /** Turnstile resuelve solo, pero tarda. Se le dan hasta 4 s. */
+  /** Turnstile resuelve solo, pero tarda. Se le dan hasta 3 s. */
   async function esperarTurnstile(): Promise<string> {
     if (!TURNSTILE_ACTIVO) return '';
-    for (let i = 0; i < 40 && !turnstileToken.current; i++) await esperar(100);
+    for (let i = 0; i < 30 && !turnstileToken.current; i++) await esperar(100);
     return turnstileToken.current;
   }
 
@@ -97,11 +101,26 @@ export function Formulario() {
     setEstado('enviando');
     setErrorEnvio(null);
 
+    const turnstile = await esperarTurnstile();
+
+    // Sin token no tiene sentido mandar: el script lo iba a rechazar y el
+    // contacto terminaba en un cartel que manda a buscar a alguien del stand.
+    // Se avisa que se puede reintentar y se pide un token nuevo.
+    if (TURNSTILE_ACTIVO && !turnstile) {
+      setErrorEnvio({
+        tipo: 'verificacion',
+        mensaje: 'No llegamos a verificar que seas una persona',
+      });
+      setEstado('error');
+      setResetTurnstile((n) => n + 1);
+      return;
+    }
+
     const payload: Payload = {
       ...datos,
       token: import.meta.env.VITE_FORM_TOKEN,
       submissionId: submissionId.current,
-      turnstileToken: await esperarTurnstile(),
+      turnstileToken: turnstile,
       origen: ORIGEN,
       enviadoEn: new Date().toISOString(),
     };
@@ -160,7 +179,7 @@ export function Formulario() {
       ? 'Enviando tus datos, esperá un momento.'
       : estado === 'exito'
         ? 'Listo, tus datos se enviaron. Te mandamos un mail de confirmación.'
-        : errorEnvio?.tipo === 'servidor'
+        : errorEnvio && errorEnvio.tipo !== 'validacion'
           ? 'No pudimos enviar los datos.'
           : '';
 
@@ -298,12 +317,16 @@ export function Formulario() {
 
             <Turnstile onToken={recibirToken} resetKey={resetTurnstile} />
 
-            {/* El motivo real, no siempre el mismo cartel: el script devuelve
-                mensajes utiles como "No pudimos verificar que seas una persona". */}
-            {errorEnvio?.tipo === 'servidor' && (
+            {/* El motivo real, no siempre el mismo cartel. Y la salida cambia
+                segun el caso: la verificacion se arregla tocando Enviar otra
+                vez, un error del script no. */}
+            {errorEnvio && errorEnvio.tipo !== 'validacion' && (
               <div className="aviso" role="alert" ref={aviso}>
                 <strong>No pudimos enviar los datos.</strong>
-                {errorEnvio.mensaje}. {TEXTOS.contactoStand}
+                {errorEnvio.mensaje}.{' '}
+                {errorEnvio.tipo === 'verificacion'
+                  ? 'Tocá Enviar de nuevo.'
+                  : TEXTOS.contactoStand}
               </div>
             )}
 
