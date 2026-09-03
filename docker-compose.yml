@@ -1,0 +1,29 @@
+# Sigue el patron del resto del VPS: el contenedor entra a la red de
+# nginx-proxy-manager y NPM lo proxea por nombre. El puerto publicado en el
+# host es solo para poder verlo por IP mientras no haya dominio; cuando el
+# subdominio este resuelto se puede borrar sin tocar nada mas.
+#
+# 8097 verificado libre el 2026-09-02. Ocupados en ese momento:
+# 80, 81, 443, 3000, 3002, 5000, 5432, 8000, 8080, 8088, 8090, 8092,
+# 8093, 8094, 8096, 9443, y 5440/18080 solo en loopback.
+services:
+  landing-fava:
+    build:
+      context: .
+      args:
+        VITE_SCRIPT_URL: ${VITE_SCRIPT_URL:-}
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
+        VITE_FORM_TOKEN: ${VITE_FORM_TOKEN:-}
+        VITE_LOCALIDAD_DEFECTO: ${VITE_LOCALIDAD_DEFECTO:-}
+    container_name: landing-fava
+    restart: unless-stopped
+    expose:
+      - "80"
+    ports:
+      - "8097:80"
+    networks:
+      - nginx-proxy-manager_default
+
+networks:
+  nginx-proxy-manager_default:
+    external: true

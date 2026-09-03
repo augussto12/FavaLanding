@@ -220,3 +220,43 @@ Nada de esto bloquea el desarrollo, pero sí el deploy final.
 - Planilla y Apps Script: cuenta de Workspace de Fava (pedir a _completar_)
 - Cloudflare Pages y DNS: _completar_
 - Cuenta de Turnstile: _completar_
+
+## Deploy en el VPS
+
+La landing corre en el VPS junto al resto de los proyectos, detrás de
+nginx-proxy-manager, con el mismo patrón que usa Condas: el contenedor entra a
+la red `nginx-proxy-manager_default` y NPM lo alcanza por nombre.
+
+```bash
+ssh root@31.97.241.220
+cd /opt/landing-fava
+git pull
+docker compose up -d --build
+```
+
+El puerto **8097** queda publicado en el host solo para poder ver la página por
+IP mientras no haya subdominio. Cuando el dominio esté resuelto, se borra el
+bloque `ports:` del compose y queda accesible únicamente por NPM.
+
+### Las variables se hornean en el build
+
+Vite reemplaza `import.meta.env.*` **en tiempo de compilación**: no alcanza con
+pasarlas al contenedor, hay que reconstruir. El `.env` del servidor vive en
+`/opt/landing-fava/.env` (no está en el repo) y el compose lo pasa como build
+args.
+
+```bash
+# despues de tocar el .env
+docker compose up -d --build
+```
+
+Si `VITE_SCRIPT_URL` está vacía, la página se ve igual pero el formulario falla
+con "Falta configurar VITE_SCRIPT_URL". Es el estado esperado hasta que el Apps
+Script esté desplegado.
+
+### Cabeceras
+
+`public/_headers` solo lo entiende Cloudflare Pages. Detrás de nginx las
+cabeceras de seguridad viven en `nginx.conf`, duplicadas en cada bloque
+`location` porque `add_header` pisa las del `server` en vez de heredarlas.
+Si se tocan en un lado, tocarlas en el otro.
