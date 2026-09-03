@@ -10,6 +10,8 @@
  *   TURNSTILE_SECRET   secret key de Cloudflare Turnstile
  *   MAIL_NOMBRE        nombre del remitente, ej. "Grupo Fava"
  *   MAIL_RESPUESTA     direccion de respuesta, ej. contacto@fava.com.ar
+ *   URL_LINKEDIN       LinkedIn de Grupo Fava, para el mail
+ *   URL_HALAXIA        busquedas laborales de Halaxia, para el mail
  *
  * Ninguno se hardcodea. Despues de cada cambio de codigo hay que crear una
  * VERSION NUEVA en Administrar implementaciones, o la URL /exec sigue
@@ -20,14 +22,23 @@ var CABECERAS = [
   'Fecha',
   'Nombre',
   'Apellido',
-  'Email',
   'DNI',
   'Telefono',
-  'Localidad',
-  'Genero',
+  'Email',
+  'Estudios',
+  'AnioCarrera',
+  'Camino',
   'Consentimiento',
   'Origen',
   'SubmissionId',
+];
+
+/** Los cuatro caminos de la dinamica del stand. Lista cerrada. */
+var CAMINOS = ['Crear', 'Resolver', 'Conectar', 'Hacer crecer'];
+
+var ANIOS = [
+  '1º año', '2º año', '3º año', '4º año', '5º año', '6º año',
+  'Ya me recibí', 'Todavía no empecé',
 ];
 
 function prop(clave, porDefecto) {
@@ -153,22 +164,36 @@ function validar(datos) {
     return { campo: 'apellido', error: 'Escribí tu apellido, al menos 2 letras' };
   }
 
-  var email = texto(datos.email).toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    return { campo: 'email', error: 'Revisá el email, le falta algo' };
-  }
-
   var dni = texto(datos.dni).replace(/\D/g, '');
   if (!/^\d{7,8}$/.test(dni)) {
     return { campo: 'dni', error: 'El DNI va sin puntos, entre 7 y 8 números' };
   }
 
+  // En la expo el telefono es obligatorio, a diferencia del formulario viejo.
   var tel = normalizarTelefono(texto(datos.telefono));
-  if (tel !== '' && !/^\d{10}$/.test(tel)) {
+  if (!/^\d{10}$/.test(tel)) {
     return {
       campo: 'telefono',
       error: 'El teléfono va con código de área y sin el 15',
     };
+  }
+
+  var email = texto(datos.email).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return { campo: 'email', error: 'Revisá el email, le falta algo' };
+  }
+
+  var estudios = texto(datos.estudios);
+  if (estudios.length < 2 || estudios.length > 100) {
+    return { campo: 'estudios', error: 'Contanos qué estudiás o estudiaste' };
+  }
+
+  if (ANIOS.indexOf(texto(datos.anioCarrera)) === -1) {
+    return { campo: 'anioCarrera', error: 'Elegí una opción de la lista' };
+  }
+
+  if (CAMINOS.indexOf(texto(datos.camino)) === -1) {
+    return { campo: 'camino', error: 'Elegí uno de los cuatro caminos' };
   }
 
   if (datos.consentimiento !== true) {
@@ -217,12 +242,14 @@ function guardarFila(datos) {
       new Date(),
       texto(datos.nombre),
       texto(datos.apellido),
-      texto(datos.email).toLowerCase(),
-      // Apostrofo adelante: sin esto Sheets se come el cero de un DNI de 7.
+      // Apostrofo adelante: sin esto Sheets se come el cero de un DNI de 7
+      // y convierte el telefono en notacion cientifica.
       "'" + texto(datos.dni).replace(/\D/g, ''),
       "'" + normalizarTelefono(texto(datos.telefono)),
-      texto(datos.localidad),
-      texto(datos.genero),
+      texto(datos.email).toLowerCase(),
+      texto(datos.estudios),
+      texto(datos.anioCarrera),
+      texto(datos.camino),
       datos.consentimiento === true ? 'Sí' : 'No',
       texto(datos.origen),
       texto(datos.submissionId),
@@ -238,18 +265,44 @@ function guardarFila(datos) {
 
 function enviarMail(datos) {
   var nombre = texto(datos.nombre);
-  var cuerpo =
-    'Hola ' +
-    nombre +
-    ',\n\n' +
-    'Recibimos tus datos. Ya estás sumado a las novedades de Grupo Fava.\n\n' +
-    'Si no fuiste vos, escribinos respondiendo este mail y te damos de baja.\n\n' +
-    'Gracias por acercarte.\n' +
-    'Grupo Fava\n';
+  var camino = texto(datos.camino);
+  var linkedin = prop('URL_LINKEDIN', '');
+  var halaxia = prop('URL_HALAXIA', '');
+
+  var lineas = [
+    'Hola ' + nombre + ',',
+    '',
+    'Gracias por acercarte a nuestro stand en la Expo UFASTA.',
+    'Ya quedaste participando del sorteo: si salís, te escribimos a este mismo mail.',
+    '',
+    'Elegiste el camino "' + camino + '". Hay mucho más detrás de FAVA, y buena',
+    'parte de eso son las personas que lo hacen posible.',
+    '',
+    'Grupo Fava es una empresa marplatense fundada en 1909, con 40 sucursales en',
+    'la Provincia de Buenos Aires y tres unidades de negocio: Fava Paseo de',
+    'Compras, Tarjeta Favacard y Préstamos Muy.',
+    '',
+  ];
+
+  if (halaxia) {
+    lineas.push('Nuestras búsquedas laborales abiertas, en Halaxia:');
+    lineas.push('  ' + halaxia);
+    lineas.push('');
+  }
+  if (linkedin) {
+    lineas.push('Seguinos en LinkedIn para enterarte de las que vienen:');
+    lineas.push('  ' + linkedin);
+    lineas.push('');
+  }
+
+  lineas.push('Si no fuiste vos quien dejó estos datos, respondé este mail y te damos');
+  lineas.push('de baja.');
+  lineas.push('');
+  lineas.push('Grupo Fava');
 
   var opciones = {
     name: prop('MAIL_NOMBRE', 'Grupo Fava'),
-    body: cuerpo,
+    body: lineas.join('\n'),
   };
   var responder = prop('MAIL_RESPUESTA', '');
   if (responder) opciones.replyTo = responder;
@@ -258,7 +311,7 @@ function enviarMail(datos) {
     Object.assign(
       {
         to: texto(datos.email),
-        subject: 'Gracias por registrarte en Grupo Fava',
+        subject: 'Gracias por pasar por el stand de Grupo Fava',
       },
       opciones
     )
@@ -290,11 +343,12 @@ function pruebaLocal() {
         turnstileToken: '',
         nombre: 'Prueba',
         apellido: 'Interna',
-        email: Session.getActiveUser().getEmail(),
         dni: '12345678',
         telefono: '0223 155123456',
-        localidad: '47-Mar del Plata',
-        genero: 'Prefiero no decirlo',
+        email: Session.getActiveUser().getEmail(),
+        estudios: 'Contador Público',
+        anioCarrera: '3º año',
+        camino: 'Resolver',
         consentimiento: true,
         origen: 'prueba',
       }),

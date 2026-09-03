@@ -28,7 +28,7 @@ export function Exito({ email, enCola, onOtra }: Props) {
         <>
           <p>
             Guardamos tus datos en este dispositivo. En cuanto vuelva la señal
-            terminamos de registrarlos y te llega la confirmación a{' '}
+            terminamos de registrarte en el sorteo y te llega el mail a{' '}
             <span className="correo">{email}</span>.
           </p>
           <p className="exito-nota">
@@ -38,11 +38,11 @@ export function Exito({ email, enCola, onOtra }: Props) {
       ) : (
         <>
           <p>
-            Ya quedaste registrado. Te mandamos un mail de confirmación a{' '}
+            Ya estás participando del sorteo. Te mandamos a{' '}
             <span className="correo">{email}</span>.
           </p>
           <p className="exito-nota">
-            Si no lo ves en unos minutos, revisá el correo no deseado.
+            En ese mail va todo lo que hacemos y nuestras búsquedas laborales abiertas. Si no lo ves en unos minutos, revisá el correo no deseado.
           </p>
         </>
       )}

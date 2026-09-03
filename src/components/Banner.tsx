@@ -2,10 +2,9 @@ import { LogoFava } from './LogoFava';
 import { TEXTOS } from '../config';
 
 /**
- * Banner de apertura. Deliberadamente corto: la persona esta de pie con
- * gente esperando atras, asi que el CTA tiene que entrar sin scrollear
- * incluso en un iPhone SE. No lleva imagen: en 4G de predio ferial cada
- * kilobyte se paga, y el rojo de marca solo alcanza.
+ * Banner de apertura. El orden pone el CTA lo mas arriba posible: la persona
+ * esta de pie con gente esperando atras. Los premios van despues del boton
+ * a proposito, para no empujarlo fuera de la primera pantalla.
  */
 export function Banner() {
   return (
@@ -15,8 +14,8 @@ export function Banner() {
 
         <p className="eyebrow">{TEXTOS.eyebrow}</p>
 
-        {/* Cada linea va dentro de su propia mascara: el span interno sube
-            desde abajo y la mascara lo recorta. Es el gesto principal. */}
+        {/* Cada linea dentro de su mascara: el span interno sube desde abajo
+            y la mascara lo recorta. Es el gesto principal. */}
         <h1 className="titular">
           {TEXTOS.titular.split('\n').map((linea, i) => (
             <span className="linea" key={i}>
@@ -26,6 +25,8 @@ export function Banner() {
         </h1>
 
         <p className="apoyo">{TEXTOS.apoyo}</p>
+
+        <p className="secundaria">{TEXTOS.secundaria}</p>
 
         <a className="boton boton-claro" href="#registro">
           {TEXTOS.cta}
@@ -46,6 +47,15 @@ export function Banner() {
             />
           </svg>
         </a>
+
+        <ul className="premios" role="list" aria-label="Premios del sorteo">
+          {TEXTOS.premios.map((p) => (
+            <li key={p.nombre}>
+              <span aria-hidden="true">{p.emoji}</span>
+              {p.nombre}
+            </li>
+          ))}
+        </ul>
       </div>
     </header>
   );

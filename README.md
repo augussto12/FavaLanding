@@ -37,7 +37,6 @@ Se cargan de `.env` en local y del panel de Cloudflare Pages en producción.
 | `VITE_SCRIPT_URL` | URL `/exec` de la implementación del Apps Script |
 | `VITE_TURNSTILE_SITE_KEY` | Site key pública de Turnstile |
 | `VITE_FORM_TOKEN` | Token compartido con el script |
-| `VITE_LOCALIDAD_DEFECTO` | Localidad preseleccionada, ej. `47-Mar del Plata` |
 
 **`VITE_FORM_TOKEN` no es un secreto.** Termina en el bundle y cualquiera lo
 lee con el inspector. Sirve para frenar bots ingenuos, nada más. La protección
@@ -164,16 +163,34 @@ src/
     cola.ts              cola offline en localStorage
     errores.ts           validación / servidor / red
     telefono.ts          normalización argentina
-  data/localidades.ts    lista de Fava con sus códigos internos
+  data/
+    opciones.ts          los cuatro caminos y los años de carrera
+    localidades.ts       SIN USO: lista de Fava con sus códigos internos
   styles/
     tokens.css           marca y escala, con los contrastes anotados
     app.css              todo lo demás, mobile first
 apps-script/Codigo.gs    backend
 ```
 
-Las localidades conservan el código interno de Fava (`47-Mar del Plata`) y eso
-es lo que se guarda en la planilla, para que después puedan cruzarlo contra su
-propia base sin adivinar por texto.
+## Los campos
+
+Salen del brief de la **Expo UFASTA**: nombre, apellido, DNI, teléfono, email,
+qué estudia, año de carrera y cuál de los cuatro caminos eligió en la dinámica
+del stand. Todos obligatorios.
+
+El teléfono pasó de opcional a obligatorio, y **localidad y género salieron del
+formulario**: no están en el brief, y en un stand cada campo de más se paga en
+gente que abandona. La lista de localidades con los códigos internos de Fava
+(`47-Mar del Plata`) queda en `data/localidades.ts` como referencia sin uso,
+porque volver a extraerla del sitio de ellos cuesta.
+
+El año de carrera es **un solo select** con 1º a 6º más "Ya me recibí" y
+"Todavía no empecé", en vez de un campo condicional: un formulario que se mueve
+solo mientras lo completan es peor que uno con una opción más.
+
+Los cuatro caminos van como radios de verdad dentro de un `fieldset`, en
+tarjetas con emoji y no en un select: es la pregunta que da sentido a la
+dinámica, y además se toca de una con el pulgar.
 
 ## Checklist previo al evento
 

@@ -1,20 +1,23 @@
 /**
- * Todo el copy vive aca, en un solo lugar, para que cambiarlo no obligue a
- * tocar componentes.
+ * Todo el copy vive aca, en un solo lugar.
  *
- * OJO, PENDIENTE DE CLIENTE: los textos de `unidades` y el titular son
- * placeholders escritos por nosotros a partir del relevamiento. Los datos
- * duros (1909, marplatense, 40 sucursales, las tres unidades) vienen del
- * brief; las descripciones de cada unidad NO estan confirmadas por Fava.
- * Antes de publicar, que las revisen ellos.
+ * Los textos del banner, los premios y los campos vienen del brief de la
+ * Expo UFASTA. Lo unico que sigue sin confirmar de Fava son las tres
+ * descripciones de `unidades`, que escribimos nosotros.
  */
 export const TEXTOS = {
   // ---- Banner ----
-  eyebrow: 'Desde 1909',
-  titular: 'Cerca tuyo\ndesde hace\n117 años',
-  apoyo:
-    'Dejanos tus datos y enterate antes que nadie de las promos, beneficios y novedades de Grupo Fava.',
-  cta: 'Dejar mis datos',
+  eyebrow: 'Expo UFASTA',
+  titular: 'Hay mucho más\ndetrás de FAVA.',
+  apoyo: 'Conocé todo lo que hacemos y a las personas que lo hacen posible.',
+  secundaria:
+    '¡Completá tus datos, conocé nuestras propuestas laborales y participá de un sorteo especial!',
+  premios: [
+    { emoji: '🎒', nombre: 'Mochila' },
+    { emoji: '🥤', nombre: 'Botella' },
+    { emoji: '🎧', nombre: 'Auriculares' },
+  ],
+  cta: 'Completá tus datos',
 
   // ---- Credenciales ----
   credenciales: [
@@ -23,7 +26,7 @@ export const TEXTOS = {
     { dato: '3', detalle: 'Unidades de negocio' },
   ],
 
-  // ---- Unidades de negocio (descripciones sin confirmar) ----
+  // ---- Unidades de negocio (descripciones sin confirmar por Fava) ----
   unidadesTitulo: 'Tres formas de estar cerca',
   unidades: [
     {
@@ -41,20 +44,23 @@ export const TEXTOS = {
   ],
 
   // ---- Formulario ----
-  formularioTitulo: 'Dejanos tus datos',
-  formularioApoyo: 'Es un minuto. Te llega un mail de confirmación al instante.',
+  formularioTitulo: '¡Queremos conocerte!',
+  formularioApoyo:
+    'Con tus datos entrás al sorteo y te llega un mail con todo lo que hacemos y nuestras búsquedas abiertas.',
+
+  caminoTitulo: '¿Qué camino elegiste?',
 
   consentimiento:
-    'Autorizo a Grupo Fava a guardar mis datos y a contactarme con novedades y promociones. Puedo pedir la baja cuando quiera.',
+    'Autorizo a Grupo Fava a guardar mis datos, a contactarme con novedades y oportunidades laborales, y a incluirme en el sorteo. Puedo pedir la baja cuando quiera.',
 
   /** Vacio = se muestra el texto sin enlace. Ley 25.326. */
   politicaUrl: '',
 
-  botonEnviar: 'Enviar mis datos',
+  botonEnviar: 'Enviar y participar',
   botonEnviando: 'Enviando…',
 
   // ---- Exito ----
-  exitoTitulo: '¡Listo!',
+  exitoTitulo: '¡Listo, ya estás participando!',
   exitoOtra: 'Cargar otra respuesta',
 
   // ---- Pie ----
@@ -66,7 +72,7 @@ export const TEXTOS = {
 } as const;
 
 /** Marca de donde vino el registro, util si mañana hay mas de un stand. */
-export const ORIGEN = 'stand';
+export const ORIGEN = 'expo-ufasta';
 
 /**
  * Turnstile solo se monta si hay site key. Sin ella el formulario funciona

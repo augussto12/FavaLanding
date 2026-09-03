@@ -1,4 +1,9 @@
 /**
+ * SIN USO EN EL FORMULARIO. El brief de la Expo UFASTA no pide localidad.
+ * Se conserva porque es la lista exacta de Fava CON SUS CODIGOS INTERNOS,
+ * extraida de su sitio en produccion, y volver a sacarla cuesta. Si en algun
+ * evento hace falta el campo, esta lista es la buena.
+ *
  * Localidades tal como las tiene cargadas Fava hoy, con su codigo interno.
  * Tomadas del <select name="location"> de fava.esmundial.com.ar/staff/index.php
  *
@@ -57,12 +62,3 @@ export const GENEROS = [
   'Prefiero no decirlo',
 ] as const;
 
-/**
- * Localidad preseleccionada segun donde se monte el stand. Un tap menos por
- * visitante, que por 300 visitantes no es poco.
- */
-export const LOCALIDAD_DEFECTO: string = VALORES_LOCALIDAD.includes(
-  import.meta.env.VITE_LOCALIDAD_DEFECTO ?? '',
-)
-  ? (import.meta.env.VITE_LOCALIDAD_DEFECTO as string)
-  : '';

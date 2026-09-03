@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { normalizarDni, normalizarTelefono } from './telefono';
-import { GENEROS, VALORES_LOCALIDAD } from '../data/localidades';
+import { VALORES_ANIO, VALORES_CAMINO } from '../data/opciones';
 
 /**
  * Los mensajes son los que ve el visitante. Concretos, no "Campo invalido":
- * el publico historico de Fava incluye gente mayor y hay 30 segundos de
- * paciencia, no mas.
+ * hay 30 segundos de paciencia, no mas, y con gente esperando atras.
+ *
+ * Campos segun el brief de la Expo UFASTA. Ahi el telefono pasa a ser
+ * obligatorio, y localidad y genero salieron del formulario.
  */
 export const esquema = z.object({
   nombre: z
@@ -20,13 +22,6 @@ export const esquema = z.object({
     .min(2, 'Escribí tu apellido, al menos 2 letras')
     .max(50, 'El apellido no puede pasar de 50 caracteres'),
 
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, 'Necesitamos tu email para mandarte la confirmación')
-    .email('Revisá el email, le falta algo. Ejemplo: nombre@gmail.com'),
-
   dni: z
     .string()
     .transform(normalizarDni)
@@ -39,23 +34,30 @@ export const esquema = z.object({
     .string()
     .transform(normalizarTelefono)
     .refine(
-      (v) => v === '' || /^\d{10}$/.test(v),
+      (v) => /^\d{10}$/.test(v),
       'El teléfono va con código de área y sin el 15. Ejemplo: 2235123456',
     ),
 
-  localidad: z
+  email: z
     .string()
-    .refine(
-      (v) => v === '' || VALORES_LOCALIDAD.includes(v),
-      'Elegí una localidad de la lista',
-    ),
+    .trim()
+    .toLowerCase()
+    .min(1, 'Necesitamos tu email para mandarte la información')
+    .email('Revisá el email, le falta algo. Ejemplo: nombre@gmail.com'),
 
-  genero: z
+  estudios: z
     .string()
-    .refine(
-      (v) => v === '' || (GENEROS as readonly string[]).includes(v),
-      'Elegí una opción de la lista',
-    ),
+    .trim()
+    .min(2, 'Contanos qué estudiás o estudiaste')
+    .max(100, 'No puede pasar de 100 caracteres'),
+
+  anioCarrera: z
+    .string()
+    .refine((v) => VALORES_ANIO.includes(v), 'Elegí una opción de la lista'),
+
+  camino: z
+    .string()
+    .refine((v) => VALORES_CAMINO.includes(v), 'Elegí uno de los cuatro caminos'),
 
   consentimiento: z.literal(true, {
     errorMap: () => ({
@@ -72,11 +74,12 @@ export type FormularioSalida = z.output<typeof esquema>;
 export const VALORES_INICIALES: FormularioEntrada = {
   nombre: '',
   apellido: '',
-  email: '',
   dni: '',
   telefono: '',
-  localidad: '',
-  genero: '',
+  email: '',
+  estudios: '',
+  anioCarrera: '',
+  camino: '',
   consentimiento: false as unknown as true,
 };
 

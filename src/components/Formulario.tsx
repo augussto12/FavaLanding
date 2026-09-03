@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Campo } from './Campo';
 import { SelectCampo } from './SelectCampo';
+import { CaminoCampo } from './CaminoCampo';
 import { Turnstile } from './Turnstile';
 import { Exito } from './Exito';
 
@@ -12,7 +13,7 @@ import type { FormularioEntrada, FormularioSalida, Payload } from '../lib/schema
 import { enviar } from '../lib/enviar';
 import { encolar } from '../lib/cola';
 import { ErrorServidor, ErrorValidacion, esperar } from '../lib/errores';
-import { GENEROS, LOCALIDAD_DEFECTO, LOCALIDADES } from '../data/localidades';
+import { ANIOS_CARRERA } from '../data/opciones';
 import { ORIGEN, TEXTOS, TURNSTILE_ACTIVO } from '../config';
 
 type Estado = 'idle' | 'enviando' | 'exito' | 'error';
@@ -21,7 +22,7 @@ type Estado = 'idle' | 'enviando' | 'exito' | 'error';
    pantalla de exito, porque su parte terminó. */
 type TipoError = 'servidor' | 'validacion';
 
-const OPCIONES_GENERO = GENEROS.map((g) => ({ valor: g, etiqueta: g }));
+const OPCIONES_ANIO = ANIOS_CARRERA.map((a) => ({ valor: a, etiqueta: a }));
 
 function nuevoId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -53,7 +54,7 @@ export function Formulario() {
     formState: { errors },
   } = useForm<FormularioEntrada, unknown, FormularioSalida>({
     resolver: zodResolver(esquema),
-    defaultValues: { ...VALORES_INICIALES, localidad: LOCALIDAD_DEFECTO },
+    defaultValues: VALORES_INICIALES,
     mode: 'onTouched',
   });
 
@@ -140,7 +141,7 @@ export function Formulario() {
   }
 
   function cargarOtra() {
-    reset({ ...VALORES_INICIALES, localidad: LOCALIDAD_DEFECTO });
+    reset(VALORES_INICIALES);
     submissionId.current = nuevoId();
     turnstileToken.current = '';
     setResetTurnstile((n) => n + 1);
@@ -201,20 +202,6 @@ export function Formulario() {
               />
             </div>
 
-            <Campo
-              id="email"
-              etiqueta="Email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              spellCheck={false}
-              enterKeyHint="next"
-              placeholder="nombre@gmail.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
             <div className="fila">
               <Campo
                 id="dni"
@@ -233,7 +220,6 @@ export function Formulario() {
               <Campo
                 id="telefono"
                 etiqueta="Teléfono"
-                opcional
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
@@ -244,56 +230,76 @@ export function Formulario() {
               />
             </div>
 
-            <SelectCampo
-              id="localidad"
-              etiqueta="Localidad"
-              opcional
-              opciones={LOCALIDADES}
-              error={errors.localidad?.message}
-              {...register('localidad')}
+            <Campo
+              id="email"
+              etiqueta="Email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              enterKeyHint="next"
+              placeholder="nombre@gmail.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+
+            <Campo
+              id="estudios"
+              etiqueta="¿Qué estudiás o estudiaste?"
+              type="text"
+              autoCapitalize="sentences"
+              enterKeyHint="next"
+              placeholder="Contador Público"
+              error={errors.estudios?.message}
+              {...register('estudios')}
             />
 
             <SelectCampo
-              id="genero"
-              etiqueta="Género"
-              opcional
-              opciones={OPCIONES_GENERO}
-              error={errors.genero?.message}
-              {...register('genero')}
+              id="anioCarrera"
+              etiqueta="¿En qué año de carrera estás?"
+              opciones={OPCIONES_ANIO}
+              error={errors.anioCarrera?.message}
+              {...register('anioCarrera')}
+            />
+
+            <CaminoCampo
+              etiqueta={TEXTOS.caminoTitulo}
+              error={errors.camino?.message}
+              {...register('camino')}
             />
 
             <div className="grupo-consentimiento">
-            <div className={`consentimiento${errors.consentimiento ? ' invalido' : ''}`}>
-              <span className="caja-check">
-                <input
-                  id="consentimiento"
-                  type="checkbox"
-                  aria-invalid={errors.consentimiento ? true : undefined}
-                  aria-describedby={errors.consentimiento ? 'consentimiento-error' : undefined}
-                  {...register('consentimiento')}
-                />
-              </span>
-              <label htmlFor="consentimiento">
-                {TEXTOS.consentimiento}{' '}
-                {TEXTOS.politicaUrl && (
-                  <a href={TEXTOS.politicaUrl} target="_blank" rel="noreferrer">
-                    Política de privacidad
-                  </a>
-                )}
-              </label>
-            </div>
-            {errors.consentimiento && (
-              <span className="mensaje-error" id="consentimiento-error">
-                {errors.consentimiento.message}
-              </span>
-            )}
+              <div className={`consentimiento${errors.consentimiento ? ' invalido' : ''}`}>
+                <span className="caja-check">
+                  <input
+                    id="consentimiento"
+                    type="checkbox"
+                    aria-invalid={errors.consentimiento ? true : undefined}
+                    aria-describedby={errors.consentimiento ? 'consentimiento-error' : undefined}
+                    {...register('consentimiento')}
+                  />
+                </span>
+                <label htmlFor="consentimiento">
+                  {TEXTOS.consentimiento}{' '}
+                  {TEXTOS.politicaUrl && (
+                    <a href={TEXTOS.politicaUrl} target="_blank" rel="noreferrer">
+                      Política de privacidad
+                    </a>
+                  )}
+                </label>
+              </div>
+              {errors.consentimiento && (
+                <span className="mensaje-error" id="consentimiento-error">
+                  {errors.consentimiento.message}
+                </span>
+              )}
             </div>
 
             <Turnstile onToken={recibirToken} resetKey={resetTurnstile} />
 
             {/* El motivo real, no siempre el mismo cartel: el script devuelve
-                mensajes utiles como "No pudimos verificar que seas una persona",
-                que le dicen a la persona si vale la pena volver a intentar. */}
+                mensajes utiles como "No pudimos verificar que seas una persona". */}
             {errorEnvio?.tipo === 'servidor' && (
               <div className="aviso" role="alert" ref={aviso}>
                 <strong>No pudimos enviar los datos.</strong>
@@ -304,7 +310,6 @@ export function Formulario() {
             <button type="submit" className="boton" disabled={enviando}>
               {enviando ? TEXTOS.botonEnviando : TEXTOS.botonEnviar}
             </button>
-
           </form>
         </>
       )}

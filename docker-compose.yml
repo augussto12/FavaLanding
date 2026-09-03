@@ -14,7 +14,6 @@ services:
         VITE_SCRIPT_URL: ${VITE_SCRIPT_URL:-}
         VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
         VITE_FORM_TOKEN: ${VITE_FORM_TOKEN:-}
-        VITE_LOCALIDAD_DEFECTO: ${VITE_LOCALIDAD_DEFECTO:-}
     container_name: landing-fava
     restart: unless-stopped
     expose:
