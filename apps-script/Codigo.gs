@@ -31,7 +31,15 @@ var CABECERAS = [
   'Consentimiento',
   'Origen',
   'SubmissionId',
+  // Vacia = el mail todavia no salio. Fecha = salio. "ERROR: ..." = fallo y
+  // no se reintenta solo; para reintentar, vaciar la celda a mano.
+  'MailEnviado',
 ];
+
+/** Tope por corrida del disparador, para no comerse los 6 min de ejecucion. */
+var TOPE_MAILS_POR_CORRIDA = 40;
+/** Colchon de cuota: si queda menos que esto, se frena y se avisa. */
+var RESERVA_CUOTA = 20;
 
 /** Los cuatro caminos de la dinamica del stand. Lista cerrada. */
 var CAMINOS = ['Crear', 'Resolver', 'Conectar', 'Hacer crecer'];
@@ -105,12 +113,11 @@ function doPost(e) {
     guardarFila(datos);
     if (datos.submissionId) cache.put(clave, '1', 600);
 
-    // 5. El mail va despues y aislado: si falla, el contacto ya esta guardado.
-    try {
-      enviarMail(datos);
-    } catch (err) {
-      console.error('mail fallido para ' + datos.email + ': ' + err);
-    }
+    // 5. El mail NO se manda aca. Antes se mandaba dentro del request y el
+    //    visitante esperaba a que MailApp terminara, con gente atras suyo en
+    //    la fila. Ahora la fila queda con MailEnviado vacio y un disparador
+    //    por tiempo la levanta en el proximo minuto. Eso ademas da reintento
+    //    gratis y deja en la planilla quien recibio el mail y quien no.
 
     return json({ ok: true });
   } catch (err) {
@@ -253,6 +260,8 @@ function guardarFila(datos) {
       datos.consentimiento === true ? 'Sí' : 'No',
       texto(datos.origen),
       texto(datos.submissionId),
+      // MailEnviado vacio: lo levanta procesarMails() en el proximo minuto.
+      '',
     ]);
   } finally {
     lock.releaseLock();
@@ -315,6 +324,107 @@ function enviarMail(datos) {
       },
       opciones
     )
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Cola de mails                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Manda los mails que quedaron pendientes. Lo llama un disparador por tiempo
+ * cada minuto, NO el request del formulario.
+ *
+ * Por que separado: mandarlo dentro de doPost hacia que el visitante esperara
+ * a MailApp con gente atras en la fila. Aparte, si MailApp fallaba, ese mail
+ * se perdia para siempre. Asi la fila queda marcada y se puede reintentar.
+ */
+function procesarMails() {
+  var lock = LockService.getScriptLock();
+  // Si la corrida anterior sigue viva, esta se saltea: vuelve en un minuto.
+  if (!lock.tryLock(5000)) return;
+
+  try {
+    var h = hoja();
+    var filas = h.getLastRow() - 1;
+    if (filas < 1) return;
+
+    var iMail = CABECERAS.indexOf('MailEnviado');
+    var valores = h.getRange(2, 1, filas, CABECERAS.length).getValues();
+    var hechos = 0;
+
+    for (var i = 0; i < valores.length && hechos < TOPE_MAILS_POR_CORRIDA; i++) {
+      if (String(valores[i][iMail]).trim() !== '') continue;
+
+      var quedan = MailApp.getRemainingDailyQuota();
+      if (quedan <= RESERVA_CUOTA) {
+        console.error('Cuota de mails casi agotada: quedan ' + quedan);
+        break;
+      }
+
+      var marca;
+      try {
+        enviarMail(filaAObjeto(valores[i]));
+        marca = new Date();
+      } catch (err) {
+        // Queda escrito en la planilla: se ve de un vistazo quien no recibio.
+        marca = 'ERROR: ' + err;
+        console.error('mail fallido en la fila ' + (i + 2) + ': ' + err);
+      }
+      h.getRange(i + 2, iMail + 1).setValue(marca);
+      hechos++;
+    }
+
+    if (hechos > 0) console.log('mails enviados en esta corrida: ' + hechos);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Traduce una fila de la planilla a lo que espera enviarMail(). */
+function filaAObjeto(fila) {
+  var o = {};
+  for (var i = 0; i < CABECERAS.length; i++) o[CABECERAS[i]] = fila[i];
+  return {
+    nombre: String(o.Nombre || ''),
+    email: String(o.Email || ''),
+    camino: String(o.Camino || ''),
+  };
+}
+
+/**
+ * Instala el disparador de mails. Correr UNA VEZ desde el editor, con la
+ * cuenta de Workspace de Fava. Si se corre de nuevo, reemplaza el anterior
+ * en vez de duplicarlo.
+ */
+function instalarDisparadorDeMails() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'procesarMails') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('procesarMails').timeBased().everyMinutes(1).create();
+  console.log('Disparador instalado: procesarMails cada 1 minuto');
+}
+
+/** Cuantos mails quedan sin mandar. Util para mirar durante el evento. */
+function verPendientes() {
+  var h = hoja();
+  var filas = h.getLastRow() - 1;
+  if (filas < 1) {
+    console.log('0 pendientes, 0 filas');
+    return;
+  }
+  var iMail = CABECERAS.indexOf('MailEnviado');
+  var col = h.getRange(2, iMail + 1, filas, 1).getValues();
+  var pend = 0;
+  var errores = 0;
+  for (var i = 0; i < col.length; i++) {
+    var v = String(col[i][0]).trim();
+    if (v === '') pend++;
+    else if (v.indexOf('ERROR') === 0) errores++;
+  }
+  console.log(
+    filas + ' filas | ' + pend + ' sin mandar | ' + errores + ' con error | ' +
+    'cuota restante: ' + MailApp.getRemainingDailyQuota()
   );
 }
 

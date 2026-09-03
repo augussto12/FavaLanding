@@ -30,7 +30,9 @@ igual, lo que hace usable el modo local.
 
 ## Variables de entorno
 
-Se cargan de `.env` en local y del panel de Cloudflare Pages en producción.
+Se cargan de `.env`, tanto en local como en el VPS (`/opt/landing-fava/.env`).
+Vite las hornea en el bundle **en tiempo de compilación**: tocar el `.env` no
+alcanza, hay que reconstruir.
 
 | Variable | Para qué |
 |---|---|
@@ -109,11 +111,11 @@ No es negociable, y está así en el código:
 1. Token compartido y Turnstile
 2. Validación de campos (revalidada del lado del servidor, no se confía en el navegador)
 3. Idempotencia por `submissionId` en `CacheService`, TTL 10 minutos
-4. `appendRow` dentro de `LockService`
-5. El mail, en `try/catch` que solo loguea
+4. `appendRow` dentro de `LockService`, con `MailEnviado` vacío
+5. Responder `{ ok: true }` — **el mail no sale acá**, lo manda el disparador
 
 Si el mail falla, el contacto ya está guardado. Al revés se pierde el dato,
-que es lo único que realmente importa.
+que es lo único que realmente importa. Ver [Los mails](#los-mails).
 
 ## Qué pasa cuando falla la red
 
@@ -129,29 +131,33 @@ el backend descarta los repetidos.
 Un payload que el servidor rechaza por validación se saca de la cola: no tiene
 sentido reintentarlo para siempre.
 
-## Deploy
+## Dominio y QR
 
-Cloudflare Pages conectado al repo. Build `npm run build`, output `dist`.
-`main` va a producción y cada rama genera su preview, útil para que Fava
-revise sin tocar producción.
+Hoy la landing corre en el VPS (ver [Deploy en el VPS](#deploy-en-el-vps)) y se
+llega por IP y puerto, sin HTTPS. **Falta definir el subdominio.**
 
-Las cabeceras de seguridad están en [public/_headers](public/_headers).
+Cuando esté: un CNAME del subdominio al VPS, el proxy host en
+nginx-proxy-manager apuntando al contenedor `landing-fava` puerto 80, y el
+certificado desde ahí. No tocar el registro raíz ni el SPF del dominio de Fava,
+que ya tiene Google Workspace, favanet y Doppler adentro y romperlo les tira el
+mail corporativo.
 
-Para el dominio, un CNAME del subdominio a lo que dé Pages. No tocar el
-registro raíz ni el SPF del dominio de Fava. Bajar el TTL a 300 segundos unos
-días antes del evento por si hay que corregir algo sobre la hora.
+Bajar el TTL a 300 segundos unos días antes del evento, por si hay que corregir
+algo sobre la hora.
 
-El QR tiene que apuntar al subdominio final, nunca a una URL de preview, y hay
-que probarlo impreso a dos metros.
+El QR tiene que apuntar al subdominio final con HTTPS, nunca a la IP, y hay que
+probarlo impreso a dos metros.
 
 ## Estructura
 
 ```
 src/
   config.ts              textos y copy pendientes de confirmar, todo junto
-  App.tsx                layout: barra en mobile, panel de marca en 768+
+  App.tsx                banner, credenciales, unidades, registro y pie
   components/
+    Banner.tsx           banner rojo, premios y CTA al formulario
     Formulario.tsx       máquina de estados idle → enviando → exito | error
+    CaminoCampo.tsx      los cuatro caminos, como radios en tarjetas
     Campo.tsx            label + input + error, un solo lugar
     SelectCampo.tsx
     Exito.tsx
@@ -237,6 +243,64 @@ Nada de esto bloquea el desarrollo, pero sí el deploy final.
 - Planilla y Apps Script: cuenta de Workspace de Fava (pedir a _completar_)
 - Cloudflare Pages y DNS: _completar_
 - Cuenta de Turnstile: _completar_
+
+## Los mails
+
+**Fava tiene Google Workspace.** Verificado el 2026-09-03 en los MX:
+
+```
+grupofava.com.ar   MX -> ASPMX.L.GOOGLE.COM (+6)   SPF: include:_spf.google.com
+fava.com.ar        MX -> smtp.google.com           SPF: include:_spf.google.com
+halaxia.com        MX -> aspmx.l.google.com
+favacard.com.ar    MX -> mx02.favanet.ar           servidor propio, NO Google
+```
+
+Eso descarta el riesgo principal del relevamiento: con Workspace, `MailApp` da
+**1.500 mails por dia** contra los ~300 esperados. No hace falta Brevo ni
+Resend.
+
+Dos detalles de la cuota: se renueva **24 h despues del primer envio**, no a
+medianoche, y es **por cuenta**, no por script. Si la misma cuenta manda mails
+de otra cosa, comparten el pozo.
+
+### El mail NO sale dentro del request
+
+Antes `enviarMail()` corria dentro de `doPost` y el visitante esperaba a que
+MailApp terminara, con gente atras suyo en la fila. Ahora:
+
+1. `doPost` guarda la fila con la columna `MailEnviado` vacia y responde.
+2. Un disparador por tiempo corre `procesarMails()` **cada minuto**, levanta las
+   filas sin marcar y manda.
+3. Cada fila queda marcada con la fecha, o con `ERROR: ...` si fallo.
+
+Ademas del tiempo de respuesta, esto da reintento gratis y deja en la planilla
+quien recibio el mail y quien no. Para reintentar uno fallido, se vacia la
+celda `MailEnviado` a mano y el proximo minuto lo agarra.
+
+Hay que correr **`instalarDisparadorDeMails()` una vez** desde el editor. Sin
+eso las filas se guardan pero no sale ningun mail.
+
+`verPendientes()` dice cuantos faltan, cuantos fallaron y cuanta cuota queda:
+correrlo durante el evento.
+
+### Lo que hay que pedirle a Fava
+
+El remitente **no se puede elegir**: `MailApp` manda siempre desde la cuenta
+que autorizo el script. O sea que la cuenta que crea la planilla y el Apps
+Script define la direccion del "De:" para siempre. Si se arma desde un Gmail
+personal, los 300 mails salen de ahi y arreglarlo despues obliga a rehacer el
+script y volver a implementar.
+
+Por eso hace falta **una cuenta de Workspace del dominio de Fava** (no admin,
+una cuenta comun alcanza), idealmente una casilla funcional del estilo
+`expo@grupofava.com.ar`. Desde esa cuenta:
+
+- se crea la planilla, asi los datos quedan en el Drive de ellos desde el dia uno
+- se crea y se implementa el Apps Script con "Ejecutar como: Yo"
+- se corre `instalarDisparadorDeMails()`
+
+`MAIL_NOMBRE` y `MAIL_RESPUESTA` solo cambian el nombre visible y el
+responder-a, no el remitente real.
 
 ## Deploy en el VPS
 
