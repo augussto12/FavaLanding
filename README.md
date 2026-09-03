@@ -119,7 +119,9 @@ que es lo único que realmente importa. Ver [Los mails](#los-mails).
 
 ## Qué pasa cuando falla la red
 
-`enviar()` corta a los 15 s y reintenta dos veces con espera de 1 s y 2 s.
+`enviar()` corta a los 8 s y reintenta una vez. Peor caso 17 s, no 48:
+el razonamiento es que existe esta misma cola, asi que insistir mas tiempo con
+la persona mirando la pantalla no gana casi nada.
 Si igual no sale, el payload queda en `localStorage` bajo `fava:pendientes` y
 al visitante se le muestra el éxito, porque su parte terminó. La pantalla se
 lo dice con todas las letras: el mail le va a llegar cuando vuelva la señal.
@@ -165,7 +167,7 @@ src/
     LogoFava.tsx         SVG institucional inline
   lib/
     schema.ts            zod, mensajes de error en criollo
-    enviar.ts            fetch, timeout de 15 s, dos reintentos
+    enviar.ts            fetch, timeout de 8 s, un reintento
     cola.ts              cola offline en localStorage
     errores.ts           validación / servidor / red
     telefono.ts          normalización argentina
@@ -285,22 +287,83 @@ correrlo durante el evento.
 
 ### Lo que hay que pedirle a Fava
 
-El remitente **no se puede elegir**: `MailApp` manda siempre desde la cuenta
-que autorizo el script. O sea que la cuenta que crea la planilla y el Apps
-Script define la direccion del "De:" para siempre. Si se arma desde un Gmail
-personal, los 300 mails salen de ahi y arreglarlo despues obliga a rehacer el
-script y volver a implementar.
+Verificado contra la documentación de Google, no deducido.
 
-Por eso hace falta **una cuenta de Workspace del dominio de Fava** (no admin,
-una cuenta comun alcanza), idealmente una casilla funcional del estilo
-`expo@grupofava.com.ar`. Desde esa cuenta:
+**Quien crea el disparador define el remitente.** Textual:
 
-- se crea la planilla, asi los datos quedan en el Drive de ellos desde el dia uno
-- se crea y se implementa el Apps Script con "Ejecutar como: Yo"
-- se corre `instalarDisparadorDeMails()`
+> "Installable triggers always run under the account of the person who created
+> them. […] the email is always sent from your account, not necessarily the
+> account that opened the document."
+> — https://developers.google.com/apps-script/guides/triggers/installable
 
-`MAIL_NOMBRE` y `MAIL_RESPUESTA` solo cambian el nombre visible y el
-responder-a, no el remitente real.
+Y `MailApp.sendEmail` **no tiene parámetro `from`**. Sus parámetros son
+`attachments, bcc, cc, htmlBody, inlineImages, name, noReply, replyTo`.
+`name` cambia el nombre visible, no la dirección.
+— https://developers.google.com/apps-script/reference/mail/mail-app
+
+#### El plan "lo armo yo y después se lo paso" NO EXISTE
+
+Dos cosas lo bloquean, las dos documentadas:
+
+> "You can't transfer a file from your personal Google account to someone with
+> a work or school account." — https://support.google.com/drive/answer/2494892
+
+> "You cannot transfer ownership of versioned deployments. If you transfer
+> ownership of a script project, the owner of the existing versioned
+> deployments doesn't change."
+> — https://developers.google.com/apps-script/concepts/deployments
+
+La planilla y el proyecto tienen que **nacer** en el Drive de la cuenta del
+cliente. No es una preferencia, es que no hay forma de moverlos después.
+
+#### Y con un Gmail personal los mails directamente no salen
+
+| | Gmail común | Google Workspace |
+|---|---|---|
+| Destinatarios por día | **100** | 1.500 |
+| Runtime de disparadores | 90 min/día | 6 h/día |
+
+— https://developers.google.com/apps-script/guides/services/quotas
+
+Con ~300 visitantes, del mail 101 en adelante no sale nada. No es que se vean
+mal: no se envían.
+
+#### El pedido concreto
+
+No es "acceso a una casilla", que es más de lo necesario y encima no alcanza.
+Es **un evento único de 15 minutos**: alguien del cliente, logueado con esa
+cuenta, en videollamada, crea la planilla, corre `inicializarPlanilla()`,
+acepta la pantalla de permisos, corre `instalarDisparadorDeMails()` y publica.
+Después da permiso de **Editor** sobre los dos archivos y ya se sigue solo.
+
+No hace falta rol de administrador, ni la contraseña, ni delegación de Gmail.
+
+Preguntar además: **¿el Workspace es una suscripción paga de más de tres
+meses?** Google aplica límites más bajos a cuentas en período de prueba.
+
+#### La trampa: dos disparadores invisibles
+
+> "A given account can't see triggers installed from a second account, even
+> though the first account can still activate those triggers"
+> — https://developers.google.com/apps-script/guides/triggers/installable
+
+Si alguien del equipo instaló un disparador para probar y después lo instala
+el cliente, quedan **dos vivos**, salen mails desde dos direcciones distintas,
+y **ninguna de las dos cuentas ve el disparador de la otra** desde el editor.
+
+Mitigado en el código: `procesarMails()` toma la fila escribiendo
+`"enviando…"` y hace `flush()` **antes** de mandar, así el segundo disparador
+la encuentra ocupada. Pero eso evita el mail duplicado, no los dos remitentes.
+
+**Control obligatorio antes del evento:** cada cuenta que alguna vez tocó el
+proyecto abre el editor con SU sesión y corre `verificarConfiguracion()`, que
+informa la dirección desde la que saldrían los mails, cuántos disparadores
+tiene esa cuenta y cuánta cuota le queda. Mirar desde una sola cuenta no
+prueba nada. Para limpiar, `borrarMisDisparadores()` desde la cuenta sobrante.
+
+`verificarConfiguracion()` sirve además para lo único que la documentación de
+Google **no** dice explícitamente: que el "De:" sea el usuario efectivo. Se
+deduce, y esa función lo convierte en dato observado.
 
 ## Deploy en el VPS
 

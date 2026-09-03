@@ -362,16 +362,24 @@ function procesarMails() {
         break;
       }
 
-      var marca;
+      // Se toma la fila ANTES de mandar y se fuerza la escritura. Si por un
+      // error de configuracion quedaran dos disparadores vivos —de dos
+      // cuentas, que NO se ven entre si desde el editor— el segundo encuentra
+      // la fila tomada y no manda de nuevo. El lock no alcanza para eso: la
+      // cuota de ejecuciones simultaneas es POR USUARIO, asi que dos cuentas
+      // distintas no comparten ninguna serializacion.
+      var celda = h.getRange(i + 2, iMail + 1);
+      celda.setValue('enviando…');
+      SpreadsheetApp.flush();
+
       try {
         enviarMail(filaAObjeto(valores[i]));
-        marca = new Date();
+        celda.setValue(new Date());
       } catch (err) {
         // Queda escrito en la planilla: se ve de un vistazo quien no recibio.
-        marca = 'ERROR: ' + err;
+        celda.setValue('ERROR: ' + err);
         console.error('mail fallido en la fila ' + (i + 2) + ': ' + err);
       }
-      h.getRange(i + 2, iMail + 1).setValue(marca);
       hechos++;
     }
 
@@ -405,6 +413,76 @@ function instalarDisparadorDeMails() {
   console.log('Disparador instalado: procesarMails cada 1 minuto');
 }
 
+/**
+ * LO PRIMERO que hay que correr, y de nuevo el dia antes del evento.
+ *
+ * Dice, con datos y no con suposiciones, desde que direccion van a salir los
+ * mails. Google no documenta en ninguna parte que el "De:" de MailApp sea el
+ * usuario efectivo: se deduce. Esto lo convierte en dato observado.
+ *
+ * Correrlo con CADA cuenta que alguna vez toco el proyecto, no solo con la
+ * del cliente: los disparadores de una cuenta son INVISIBLES para las demas
+ * (documentado), asi que mirar desde una sola no prueba nada.
+ */
+function verificarConfiguracion() {
+  var yo = Session.getEffectiveUser().getEmail();
+  var mios = ScriptApp.getProjectTriggers().filter(function (t) {
+    return t.getHandlerFunction() === 'procesarMails';
+  });
+  var cuota = MailApp.getRemainingDailyQuota();
+
+  var lineas = [
+    '=========================================================',
+    '  SESION ACTUAL: ' + yo,
+    '',
+    '  Si hay un disparador creado por esta cuenta, los mails',
+    '  van a salir con este "De:". No se puede cambiar sin',
+    '  borrarlo y recrearlo desde la cuenta correcta.',
+    '',
+    '  Disparadores de procesarMails de ESTA cuenta: ' + mios.length,
+  ];
+
+  if (mios.length === 0) {
+    lineas.push('    -> Ninguno. Esta cuenta NO manda mails.');
+  } else if (mios.length === 1) {
+    lineas.push('    -> Uno. Correcto, si esta es la cuenta que corresponde.');
+  } else {
+    lineas.push('    -> ' + mios.length + ' DISPARADORES. Estan mandando');
+    lineas.push('       mails repetidos. Borrar todos y dejar uno.');
+  }
+
+  lineas.push('');
+  lineas.push('  Cuota de mails restante hoy: ' + cuota);
+  if (cuota <= 100) {
+    lineas.push('    -> OJO: 100 o menos es el techo de una cuenta');
+    lineas.push('       gratuita de Gmail, NO de Workspace. Con 300');
+    lineas.push('       visitantes, del mail 101 en adelante no sale nada.');
+  }
+
+  lineas.push('');
+  lineas.push('  RECORDATORIO: esto solo ve los disparadores de ' + yo + '.');
+  lineas.push('  Si otra cuenta creo uno, desde aca es invisible y van a');
+  lineas.push('  salir mails desde dos direcciones distintas.');
+  lineas.push('=========================================================');
+
+  console.log(lineas.join('\n'));
+  return { cuenta: yo, disparadores: mios.length, cuota: cuota };
+}
+
+/** Borra los disparadores de mails de ESTA cuenta. Solo los de esta cuenta. */
+function borrarMisDisparadores() {
+  var n = 0;
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'procesarMails') {
+      ScriptApp.deleteTrigger(t);
+      n++;
+    }
+  });
+  console.log(
+    'Borrados ' + n + ' disparadores de ' + Session.getEffectiveUser().getEmail()
+  );
+}
+
 /** Cuantos mails quedan sin mandar. Util para mirar durante el evento. */
 function verPendientes() {
   var h = hoja();
@@ -417,15 +495,25 @@ function verPendientes() {
   var col = h.getRange(2, iMail + 1, filas, 1).getValues();
   var pend = 0;
   var errores = 0;
+  var trabados = 0;
   for (var i = 0; i < col.length; i++) {
     var v = String(col[i][0]).trim();
     if (v === '') pend++;
     else if (v.indexOf('ERROR') === 0) errores++;
+    // Se tomo la fila pero nunca se resolvio: la ejecucion murio en el medio.
+    else if (v.indexOf('enviando') === 0) trabados++;
   }
   console.log(
     filas + ' filas | ' + pend + ' sin mandar | ' + errores + ' con error | ' +
-    'cuota restante: ' + MailApp.getRemainingDailyQuota()
+    trabados + ' trabados en envio | cuota restante: ' +
+    MailApp.getRemainingDailyQuota()
   );
+  if (trabados > 0) {
+    console.warn(
+      'Hay ' + trabados + ' filas en "enviando…": una ejecucion murio en el ' +
+      'medio. Vaciar esas celdas para que se reintenten.'
+    );
+  }
 }
 
 /* ------------------------------------------------------------------ */
