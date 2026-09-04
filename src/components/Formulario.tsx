@@ -28,6 +28,11 @@ type TipoError = 'servidor' | 'validacion' | 'verificacion';
 
 const OPCIONES_ANIO = ANIOS_CARRERA.map((a) => ({ valor: a, etiqueta: a }));
 
+type Props = {
+  onExito?: () => void;
+  onOtra?: () => void;
+};
+
 function nuevoId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
@@ -35,7 +40,7 @@ function nuevoId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function Formulario() {
+export function Formulario({ onExito, onOtra }: Props) {
   const [estado, setEstado] = useState<Estado>('idle');
   const [errorEnvio, setErrorEnvio] = useState<{ tipo: TipoError; mensaje: string } | null>(null);
   const [emailEnviado, setEmailEnviado] = useState('');
@@ -130,6 +135,7 @@ export function Formulario() {
       setEmailEnviado(datos.email);
       setEnCola(false);
       setEstado('exito');
+      onExito?.();
     } catch (e) {
       if (e instanceof ErrorValidacion) {
         const campo = e.campo as keyof FormularioEntrada | undefined;
@@ -156,6 +162,7 @@ export function Formulario() {
       setEmailEnviado(datos.email);
       setEnCola(true);
       setEstado('exito');
+      onExito?.();
     }
   }
 
@@ -167,6 +174,7 @@ export function Formulario() {
     setErrorEnvio(null);
     setEnCola(false);
     setEstado('idle');
+    onOtra?.();
     // El foco va en un efecto, no aca: en este punto el input todavia no se
     // remonto y setFocus caeria sobre un nodo que ya no existe.
     volverAlFormulario.current = true;

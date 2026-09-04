@@ -362,7 +362,7 @@ select {
 
 /* Formulario */
 .seccion-registro {
-  padding-top: 0;
+  padding-top: clamp(1.75rem, 4vw, 3.5rem);
   scroll-margin-top: 1rem;
 }
 
