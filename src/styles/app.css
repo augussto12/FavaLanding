@@ -127,14 +127,14 @@ select {
   width: 100%;
   height: 125%;
   object-fit: cover;
-  object-position: 72% center;
+  object-position: 90% center;
 }
 
 .banner-foto::after {
   content: '';
   z-index: 1;
   left: 0;
-  background: linear-gradient(90deg, var(--marca) 0%, var(--marca) 42%, rgba(229, 41, 40, 0.88) 58%, rgba(229, 41, 40, 0.2) 76%, rgba(18, 14, 14, 0.08) 100%);
+  background: linear-gradient(90deg, rgba(229, 41, 40, 0.62) 0%, rgba(229, 41, 40, 0.2) 16%, rgba(229, 41, 40, 0) 34%, rgba(18, 14, 14, 0.02) 100%);
 }
 
 .banner-cuerpo {
