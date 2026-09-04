@@ -9,7 +9,10 @@ export function Banner() {
   return (
     <header className="banner">
       <div className="banner-foto" role="img" aria-label="Expo UFASTA 2026 y Grupo Fava">
-        <img src="/FASTA-13.jpg.jpeg" alt="" />
+        <picture>
+          <source media="(max-width: 767px)" srcSet="/banner-mobile-ufasta.png" />
+          <img src="/FASTA-13.jpg.jpeg" alt="" />
+        </picture>
       </div>
 
       <div className="contenedor banner-cuerpo">
