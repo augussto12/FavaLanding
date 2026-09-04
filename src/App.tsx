@@ -3,6 +3,7 @@ import { Banner } from './components/Banner';
 import { Credenciales } from './components/Credenciales';
 import { Unidades } from './components/Unidades';
 import { Formulario } from './components/Formulario';
+import { Cierre } from './components/Cierre';
 import { PieDePagina } from './components/PieDePagina';
 import { iniciarCola } from './lib/cola';
 
@@ -35,6 +36,7 @@ export default function App() {
         </section>
       </main>
 
+      <Cierre />
       <PieDePagina />
     </>
   );

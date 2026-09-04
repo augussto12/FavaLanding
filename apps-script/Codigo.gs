@@ -195,7 +195,7 @@ function validar(datos) {
     return { campo: 'estudios', error: 'Contanos qué estudiás o estudiaste' };
   }
 
-  if (ANIOS.indexOf(texto(datos.anioCarrera)) === -1) {
+  if (texto(datos.anioCarrera) && ANIOS.indexOf(texto(datos.anioCarrera)) === -1) {
     return { campo: 'anioCarrera', error: 'Elegí una opción de la lista' };
   }
 
@@ -278,40 +278,41 @@ function enviarMail(datos) {
   var linkedin = prop('URL_LINKEDIN', '');
   var halaxia = prop('URL_HALAXIA', '');
 
+  var textoHalaxia = halaxia || '(link a las oportunidades laborales)';
+  var textoLinkedin = linkedin || '(link a LinkedIn)';
   var lineas = [
-    'Hola ' + nombre + ',',
+    '¡Gracias por acercarte a conocernos!',
     '',
-    'Gracias por acercarte a nuestro stand en la Expo UFASTA.',
-    'Ya quedaste participando del sorteo: si salís, te escribimos a este mismo mail.',
+    'En Grupo FAVA somos mucho más de lo que quizás conocías hasta hoy. Detrás de nuestros productos y servicios hay personas y equipos que todos los días crean, resuelven, conectan y hacen crecer nuevas ideas y proyectos.',
     '',
-    'Elegiste el camino "' + camino + '". Hay mucho más detrás de FAVA, y buena',
-    'parte de eso son las personas que lo hacen posible.',
+    'Y queremos que puedas conocerlos.',
     '',
-    'Grupo Fava es una empresa marplatense fundada en 1909, con 40 sucursales en',
-    'la Provincia de Buenos Aires y tres unidades de negocio: Fava Paseo de',
-    'Compras, Tarjeta Favacard y Préstamos Muy.',
+    'Si te interesa formar parte de Grupo FAVA, podés descubrir nuestras búsquedas abiertas y postularte desde nuestro portal de empleos:',
     '',
+    '👉 Conocé nuestras oportunidades: ' + textoHalaxia,
+    '',
+    'También podés seguirnos en LinkedIn para conocer más sobre nuestros equipos, proyectos y todo lo que hacemos:',
+    '',
+    '👉 Seguinos en LinkedIn: ' + textoLinkedin,
+    '',
+    'Gracias por dejarnos tus datos y ser parte de la Expo UFASTA 2026. ❤️',
   ];
 
-  if (halaxia) {
-    lineas.push('Nuestras búsquedas laborales abiertas, en Halaxia:');
-    lineas.push('  ' + halaxia);
-    lineas.push('');
-  }
-  if (linkedin) {
-    lineas.push('Seguinos en LinkedIn para enterarte de las que vienen:');
-    lineas.push('  ' + linkedin);
-    lineas.push('');
-  }
-
-  lineas.push('Si no fuiste vos quien dejó estos datos, respondé este mail y te damos');
-  lineas.push('de baja.');
-  lineas.push('');
-  lineas.push('Grupo Fava');
+  var html = [
+    '<p>¡Gracias por acercarte a conocernos!</p>',
+    '<p>En Grupo FAVA somos mucho más de lo que quizás conocías hasta hoy. Detrás de nuestros productos y servicios hay personas y equipos que todos los días crean, resuelven, conectan y hacen crecer nuevas ideas y proyectos.</p>',
+    '<p>Y queremos que puedas conocerlos.</p>',
+    '<p>Si te interesa formar parte de Grupo FAVA, podés descubrir nuestras búsquedas abiertas y postularte desde nuestro portal de empleos:</p>',
+    '<p>👉 <a href="' + textoHalaxia + '">Conocé nuestras oportunidades</a></p>',
+    '<p>También podés seguirnos en LinkedIn para conocer más sobre nuestros equipos, proyectos y todo lo que hacemos:</p>',
+    '<p>👉 <a href="' + textoLinkedin + '">Seguinos en LinkedIn</a></p>',
+    '<p>Gracias por dejarnos tus datos y ser parte de la Expo UFASTA 2026. ❤️</p>',
+  ].join('');
 
   var opciones = {
     name: prop('MAIL_NOMBRE', 'Grupo Fava'),
     body: lineas.join('\n'),
+    htmlBody: '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#1c1917">' + html + '</div>',
   };
   var responder = prop('MAIL_RESPUESTA', '');
   if (responder) opciones.replyTo = responder;
@@ -320,7 +321,7 @@ function enviarMail(datos) {
     Object.assign(
       {
         to: texto(datos.email),
-        subject: 'Gracias por pasar por el stand de Grupo Fava',
+        subject: 'Hay mucho más detrás de FAVA 👀',
       },
       opciones
     )

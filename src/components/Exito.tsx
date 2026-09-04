@@ -37,12 +37,9 @@ export function Exito({ email, enCola, onOtra }: Props) {
         </>
       ) : (
         <>
-          <p>
-            Ya estás participando del sorteo. Te mandamos a{' '}
-            <span className="correo">{email}</span>.
-          </p>
+          <p>¡Tus datos se registraron correctamente y ya estás participando del sorteo!</p>
           <p className="exito-nota">
-            En ese mail va todo lo que hacemos y nuestras búsquedas laborales abiertas. Si no lo ves en unos minutos, revisá el correo no deseado.
+            Revisá tu mail: te enviamos más información sobre Grupo Fava y nuestras oportunidades laborales. Lo mandamos a <span className="correo">{email}</span>. Si no lo ves en unos minutos, revisá el correo no deseado.
           </p>
         </>
       )}

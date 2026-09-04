@@ -53,7 +53,8 @@ export const esquema = z.object({
 
   anioCarrera: z
     .string()
-    .refine((v) => VALORES_ANIO.includes(v), 'Elegí una opción de la lista'),
+    .optional()
+    .refine((v) => !v || VALORES_ANIO.includes(v), 'Elegí una opción de la lista'),
 
   camino: z
     .string()

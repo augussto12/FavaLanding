@@ -278,6 +278,7 @@ export function Formulario() {
               id="anioCarrera"
               etiqueta="¿En qué año de carrera estás?"
               opciones={OPCIONES_ANIO}
+              opcional
               error={errors.anioCarrera?.message}
               {...register('anioCarrera')}
             />

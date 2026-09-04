@@ -46,12 +46,12 @@ export const TEXTOS = {
   // ---- Formulario ----
   formularioTitulo: '¡Queremos conocerte!',
   formularioApoyo:
-    'Con tus datos entrás al sorteo y te llega un mail con todo lo que hacemos y nuestras búsquedas abiertas.',
+    'Completá tus datos para que podamos seguir en contacto y participar del sorteo.',
 
   caminoTitulo: '¿Qué camino elegiste?',
 
   consentimiento:
-    'Autorizo a Grupo Fava a guardar mis datos, a contactarme con novedades y oportunidades laborales, y a incluirme en el sorteo. Puedo pedir la baja cuando quiera.',
+    'Acepto que Grupo Fava guarde mis datos, me envíe información y oportunidades laborales, y me incluya en el sorteo.',
 
   /** Vacio = se muestra el texto sin enlace. Ley 25.326. */
   politicaUrl: '',
@@ -61,6 +61,9 @@ export const TEXTOS = {
 
   // ---- Exito ----
   exitoTitulo: '¡Listo, ya estás participando!',
+  cierreTitulo: '¡Gracias por participar! 🙌',
+  cierreApoyo:
+    'Tus datos se registraron correctamente y ya estás participando del sorteo. Además, revisá tu mail: te enviamos más información para que puedas conocer todo lo que hay detrás de Grupo FAVA y nuestras oportunidades laborales.',
   exitoOtra: 'Cargar otra respuesta',
 
   // ---- Pie ----
