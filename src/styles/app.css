@@ -94,7 +94,7 @@ select {
 .banner {
   position: relative;
   isolation: isolate;
-  min-height: 610px;
+  min-height: 0;
   overflow: hidden;
   background: var(--marca);
   color: #fff;
@@ -102,51 +102,45 @@ select {
 
 .banner-foto,
 .banner-foto::after {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
 }
 
 .banner-foto {
-  left: 42%;
-  z-index: -1;
-  overflow: hidden;
+  width: 100%;
 }
 
 .banner-foto picture {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
 }
 
 .banner-foto img {
-  position: absolute;
-  top: -8%;
-  left: 0;
+  position: static;
   width: 100%;
-  height: 125%;
-  object-fit: cover;
-  object-position: 90% center;
+  height: auto;
+  object-fit: contain;
 }
 
 .banner-foto::after {
-  content: '';
-  z-index: 1;
-  left: 0;
-  background: linear-gradient(90deg, rgba(229, 41, 40, 0.62) 0%, rgba(229, 41, 40, 0.2) 16%, rgba(229, 41, 40, 0) 34%, rgba(18, 14, 14, 0.02) 100%);
+  display: none;
 }
 
 .banner-cuerpo {
   display: flex;
   align-items: flex-start;
-  min-height: 610px;
-  padding-top: clamp(2rem, 6vw, 5.5rem);
-  padding-bottom: clamp(2rem, 6vw, 4.5rem);
+  min-height: 0;
+  padding-top: 1rem;
+  padding-bottom: 1.25rem;
+  background: var(--marca);
 }
 
 .banner-contenido {
   width: min(100%, 570px);
+}
+
+.banner-contenido > :not(.boton-claro) {
+  display: none;
 }
 
 .eyebrow,
@@ -227,7 +221,7 @@ select {
   display: inline-flex;
   width: auto;
   gap: 0.65rem;
-  margin-top: 1.5rem;
+  margin-top: 0;
   padding: 0.75rem 1.25rem;
   background: #fff;
   color: var(--marca-oscuro);
