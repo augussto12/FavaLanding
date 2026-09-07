@@ -44,8 +44,8 @@ Y estos dos ya están definidos, se copian tal cual:
 | Link de Halaxia | `https://www.halaxia.com/empresa/grupo-fava` |
 | Link de LinkedIn | `https://www.linkedin.com/company/grupofava/` |
 
-Augusto te pasa también la dirección de la página, que hace falta para que el
-mail muestre las imágenes.
+La página ya está online en `https://conocegrupofava.com.ar`, de ahí salen las
+imágenes del mail.
 
 ---
 
@@ -93,12 +93,12 @@ Cargá estas, una por una. El nombre va tal cual, respetando mayúsculas:
 | `SHEET_ID` | El código que copiaste en el paso 1 |
 | `HOJA` | `Registros` |
 | `FORM_TOKEN` | El que te pasó Augusto |
-| `TURNSTILE_SECRET` | El que te pasó Augusto |
+| `TURNSTILE_SECRET` | El que te pasó Augusto (anti-robots) |
 | `MAIL_NOMBRE` | `Grupo Fava` |
 | `MAIL_RESPUESTA` | La casilla donde querés recibir las respuestas |
 | `URL_HALAXIA` | `https://www.halaxia.com/empresa/grupo-fava` |
 | `URL_LINKEDIN` | `https://www.linkedin.com/company/grupofava/` |
-| `URL_BASE` | La dirección de la página, que te pasa Augusto |
+| `URL_BASE` | `https://conocegrupofava.com.ar` |
 
 Tocá **Guardar propiedades de la secuencia de comandos**.
 
