@@ -9,9 +9,11 @@ export function Banner() {
   return (
     <header className="banner">
       <div className="banner-foto" role="img" aria-label="Expo UFASTA 2026 y Grupo Fava">
+        {/* webp optimizados: los originales pesaban 4,7 MB y 1,6 MB, que en
+            4G de predio ferial son una eternidad. Ver scripts/optimizar-imagenes.mjs */}
         <picture>
-          <source media="(max-width: 767px)" srcSet="/banner-mobile-ufasta.png" />
-          <img src="/FASTA-13.jpg.jpeg" alt="" />
+          <source media="(max-width: 767px)" srcSet="/hero-mobile.webp" />
+          <img src="/hero-desktop.webp" alt="" width="1800" height="750" fetchPriority="high" />
         </picture>
       </div>
 

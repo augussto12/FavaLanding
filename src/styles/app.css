@@ -710,12 +710,6 @@ select {
   padding-bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1.5rem));
 }
 
-.pie-logo {
-  width: auto;
-  height: 22px;
-  margin-bottom: 0.35rem;
-  color: #fff;
-}
 
 .pie-principal {
   font-size: 0.85rem;
@@ -886,5 +880,69 @@ select {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   Banner del pie
+
+   La pieza original es 9,6:1. Entera solo funciona de 768 para arriba;
+   abajo de eso mide 40 px de alto y el texto no se lee, asi que se rearma
+   apilada con el logo vectorial y el sello recortado.
+   ============================================================ */
+.pie-banner {
+  background: var(--marca);
+}
+
+.pie-banner-ancho {
+  display: none;
+  width: 100%;
+  height: auto;
+}
+
+.pie-banner-apilado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  padding: var(--e-5) max(var(--canaleta), env(safe-area-inset-left))
+    var(--e-5) max(var(--canaleta), env(safe-area-inset-right));
+  color: #fff;
+}
+
+.pie-banner-apilado p {
+  font-size: var(--t-m);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.pie-banner-marcas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-4);
+}
+
+.pie-banner-logo {
+  height: 24px;
+  width: auto;
+  color: #fff;
+  flex: 0 1 auto;
+}
+
+.pie-banner-sello {
+  height: 54px;
+  width: auto;
+  flex: 0 0 auto;
+}
+
+@media (min-width: 768px) {
+  .pie-banner-ancho {
+    display: block;
+  }
+
+  .pie-banner-apilado {
+    display: none;
   }
 }

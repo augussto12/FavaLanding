@@ -9,3 +9,5 @@ README.md
 .env.*
 !.env.example
 tsconfig.tsbuildinfo
+assets-fuente
+scripts

@@ -10,3 +10,7 @@ dist-ssr
 !.vscode/extensions.json
 *.log
 tsconfig.tsbuildinfo
+
+# Originales de diseño: pesan 6,5 MB y no se despliegan. De aca salen los
+# webp de public/ corriendo scripts/optimizar-imagenes.mjs
+assets-fuente/

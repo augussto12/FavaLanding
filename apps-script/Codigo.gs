@@ -12,6 +12,7 @@
  *   MAIL_RESPUESTA     direccion de respuesta, ej. contacto@fava.com.ar
  *   URL_LINKEDIN       LinkedIn de Grupo Fava, para el mail
  *   URL_HALAXIA        busquedas laborales de Halaxia, para el mail
+ *   URL_BASE           dominio de la landing, de ahi salen las imagenes del mail
  *
  * Ninguno se hardcodea. Despues de cada cambio de codigo hay que crear una
  * VERSION NUEVA en Administrar implementaciones, o la URL /exec sigue
@@ -274,46 +275,74 @@ function guardarFila(datos) {
 
 function enviarMail(datos) {
   var nombre = texto(datos.nombre);
-  var camino = texto(datos.camino);
-  var linkedin = prop('URL_LINKEDIN', '');
   var halaxia = prop('URL_HALAXIA', '');
+  var linkedin = prop('URL_LINKEDIN', '');
+  // Dominio de la landing: de ahi salen las imagenes del mail.
+  var base = prop('URL_BASE', '').replace(/\/+$/, '');
 
-  var textoHalaxia = halaxia || '(link a las oportunidades laborales)';
-  var textoLinkedin = linkedin || '(link a LinkedIn)';
+  // --- Version en texto plano ---
+  // No es decorativa: es lo que ve quien tenga las imagenes bloqueadas, y
+  // ademas mejora la reputacion del mensaje frente a los filtros de spam.
   var lineas = [
     '¡Gracias por acercarte a conocernos!',
     '',
-    'En Grupo FAVA somos mucho más de lo que quizás conocías hasta hoy. Detrás de nuestros productos y servicios hay personas y equipos que todos los días crean, resuelven, conectan y hacen crecer nuevas ideas y proyectos.',
+    'En Grupo FAVA somos mucho más de lo que quizás conocías hasta hoy.',
+    'Detrás de nuestros productos y servicios hay personas y equipos que',
+    'todos los días crean, resuelven, conectan y hacen crecer nuevas ideas',
+    'y proyectos.',
     '',
     'Y queremos que puedas conocerlos.',
     '',
-    'Si te interesa formar parte de Grupo FAVA, podés descubrir nuestras búsquedas abiertas y postularte desde nuestro portal de empleos:',
+    'Si te interesa formar parte de Grupo FAVA, podés descubrir nuestras',
+    'búsquedas abiertas y postularte desde nuestro portal de empleos:',
+    halaxia ? '  ' + halaxia : '  (link pendiente)',
     '',
-    '👉 Conocé nuestras oportunidades: ' + textoHalaxia,
+    'También podés seguirnos en LinkedIn para conocer más sobre nuestros',
+    'equipos, proyectos y todo lo que hacemos:',
+    linkedin ? '  ' + linkedin : '  (link pendiente)',
     '',
-    'También podés seguirnos en LinkedIn para conocer más sobre nuestros equipos, proyectos y todo lo que hacemos:',
+    'Gracias por dejarnos tus datos y ser parte de la Expo UFASTA 2026.',
     '',
-    '👉 Seguinos en LinkedIn: ' + textoLinkedin,
-    '',
-    'Gracias por dejarnos tus datos y ser parte de la Expo UFASTA 2026. ❤️',
+    'Grupo Fava',
   ];
-
-  var html = [
-    '<p>¡Gracias por acercarte a conocernos!</p>',
-    '<p>En Grupo FAVA somos mucho más de lo que quizás conocías hasta hoy. Detrás de nuestros productos y servicios hay personas y equipos que todos los días crean, resuelven, conectan y hacen crecer nuevas ideas y proyectos.</p>',
-    '<p>Y queremos que puedas conocerlos.</p>',
-    '<p>Si te interesa formar parte de Grupo FAVA, podés descubrir nuestras búsquedas abiertas y postularte desde nuestro portal de empleos:</p>',
-    '<p>👉 <a href="' + textoHalaxia + '">Conocé nuestras oportunidades</a></p>',
-    '<p>También podés seguirnos en LinkedIn para conocer más sobre nuestros equipos, proyectos y todo lo que hacemos:</p>',
-    '<p>👉 <a href="' + textoLinkedin + '">Seguinos en LinkedIn</a></p>',
-    '<p>Gracias por dejarnos tus datos y ser parte de la Expo UFASTA 2026. ❤️</p>',
-  ].join('');
 
   var opciones = {
     name: prop('MAIL_NOMBRE', 'Grupo Fava'),
     body: lineas.join('\n'),
-    htmlBody: '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#1c1917">' + html + '</div>',
   };
+
+  // --- Version HTML, con las piezas de diseño ---
+  // Solo si hay dominio configurado. Sin el, el mail sale en texto plano,
+  // que es preferible a mandar imagenes rotas.
+  if (base) {
+    var pieza = function (archivo, alt, enlace) {
+      var img =
+        '<img src="' + base + '/mail/' + archivo + '" alt="' + alt + '" ' +
+        'width="600" style="display:block;width:100%;max-width:600px;' +
+        'height:auto;border:0;margin:0 auto">';
+      return enlace
+        ? '<a href="' + enlace + '" style="text-decoration:none">' + img + '</a>'
+        : img;
+    };
+
+    var html = [
+      '<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1c1917">',
+      pieza('mail-intro.jpg', 'Gracias por acercarte a conocernos', ''),
+      pieza('mail-halaxia.jpg', 'Conocé nuestras oportunidades en Halaxia', halaxia),
+      pieza('mail-linkedin.jpg', 'Seguinos en LinkedIn', linkedin),
+      pieza('mail-cierre.jpg', 'Gracias por ser parte de la Expo UFASTA 2026', ''),
+      // Los enlaces tambien en texto: si el cliente bloquea imagenes, el mail
+      // sigue sirviendo para lo unico que importa, que es que hagan clic.
+      '<p style="font-size:14px;line-height:1.6;padding:20px 16px 0;margin:0">',
+      halaxia ? '<a href="' + halaxia + '" style="color:#b81f1e">Conocé nuestras oportunidades en Halaxia</a><br>' : '',
+      linkedin ? '<a href="' + linkedin + '" style="color:#0a66c2">Seguinos en LinkedIn</a>' : '',
+      '</p>',
+      '</div>',
+    ].join('');
+
+    opciones.htmlBody = html;
+  }
+
   var responder = prop('MAIL_RESPUESTA', '');
   if (responder) opciones.replyTo = responder;
 
