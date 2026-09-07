@@ -95,10 +95,18 @@ export function Formulario({ onExito, onOtra }: Props) {
     turnstileToken.current = t;
   }, []);
 
-  /** Turnstile resuelve solo, pero tarda. Se le dan hasta 3 s. */
+  /**
+   * Turnstile resuelve solo, pero tarda. Se le dan hasta 8 s.
+   *
+   * Si no llega a tiempo se manda IGUAL, con el token vacio, y decide el
+   * servidor. Antes se bloqueaba el envio: en 4G de predio ferial eso frustra
+   * contactos legitimos, que es justo lo que este proyecto no puede permitirse.
+   * El servidor guarda la fila igual y solo se guarda el mail, que es lo que
+   * consume cuota.
+   */
   async function esperarTurnstile(): Promise<string> {
     if (!TURNSTILE_ACTIVO) return '';
-    for (let i = 0; i < 30 && !turnstileToken.current; i++) await esperar(100);
+    for (let i = 0; i < 80 && !turnstileToken.current; i++) await esperar(100);
     return turnstileToken.current;
   }
 
@@ -107,19 +115,6 @@ export function Formulario({ onExito, onOtra }: Props) {
     setErrorEnvio(null);
 
     const turnstile = await esperarTurnstile();
-
-    // Sin token no tiene sentido mandar: el script lo iba a rechazar y el
-    // contacto terminaba en un cartel que manda a buscar a alguien del stand.
-    // Se avisa que se puede reintentar y se pide un token nuevo.
-    if (TURNSTILE_ACTIVO && !turnstile) {
-      setErrorEnvio({
-        tipo: 'verificacion',
-        mensaje: 'No llegamos a verificar que seas una persona',
-      });
-      setEstado('error');
-      setResetTurnstile((n) => n + 1);
-      return;
-    }
 
     const payload: Payload = {
       ...datos,

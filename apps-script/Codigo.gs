@@ -83,14 +83,12 @@ function doPost(e) {
     if (datos.token !== prop('FORM_TOKEN', '')) {
       return json({ ok: false, tipo: 'servidor', error: 'Token invalido' });
     }
+    // Turnstile NO rechaza el envio. Un rechazo aca es un contacto perdido, y
+    // perder contactos es el unico fracaso real de este proyecto. Lo que se
+    // protege es la CUOTA DE MAILS: la fila se guarda siempre, pero si no
+    // verifica no sale mail y queda marcada para que alguien la mire.
     var secret = prop('TURNSTILE_SECRET', '');
-    if (secret && !validarTurnstile(datos.turnstileToken, secret)) {
-      return json({
-        ok: false,
-        tipo: 'servidor',
-        error: 'No pudimos verificar que seas una persona',
-      });
-    }
+    var verificado = !secret || validarTurnstile(datos.turnstileToken, secret);
 
     // 2. Campos
     var problema = validar(datos);
@@ -111,7 +109,7 @@ function doPost(e) {
     }
 
     // 4. Guardar. Esto es lo unico que realmente importa.
-    guardarFila(datos);
+    guardarFila(datos, verificado);
     if (datos.submissionId) cache.put(clave, '1', 600);
 
     // 5. El mail NO se manda aca. Antes se mandaba dentro del request y el
@@ -242,7 +240,7 @@ function hoja() {
  * LockService serializa los appendRow. Sin esto, dos personas enviando
  * en el mismo segundo pueden pisarse la fila.
  */
-function guardarFila(datos) {
+function guardarFila(datos, verificado) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
@@ -261,8 +259,10 @@ function guardarFila(datos) {
       datos.consentimiento === true ? 'Sí' : 'No',
       texto(datos.origen),
       texto(datos.submissionId),
-      // MailEnviado vacio: lo levanta procesarMails() en el proximo minuto.
-      '',
+      // Vacio = lo levanta procesarMails(). SIN VERIFICAR = no paso Turnstile,
+      // asi que se guarda pero no se le manda mail. Si resulta ser una persona
+      // de verdad, se vacia la celda a mano y sale en el proximo minuto.
+      verificado === false ? 'SIN VERIFICAR' : '',
     ]);
   } finally {
     lock.releaseLock();
@@ -526,16 +526,18 @@ function verPendientes() {
   var pend = 0;
   var errores = 0;
   var trabados = 0;
+  var sinVerificar = 0;
   for (var i = 0; i < col.length; i++) {
     var v = String(col[i][0]).trim();
     if (v === '') pend++;
     else if (v.indexOf('ERROR') === 0) errores++;
     // Se tomo la fila pero nunca se resolvio: la ejecucion murio en el medio.
     else if (v.indexOf('enviando') === 0) trabados++;
+    else if (v === 'SIN VERIFICAR') sinVerificar++;
   }
   console.log(
     filas + ' filas | ' + pend + ' sin mandar | ' + errores + ' con error | ' +
-    trabados + ' trabados en envio | cuota restante: ' +
+    trabados + ' trabados | ' + sinVerificar + ' sin verificar | cuota: ' +
     MailApp.getRemainingDailyQuota()
   );
   if (trabados > 0) {
@@ -597,6 +599,10 @@ function armarResumen() {
     '=COUNTA(' + reg + '!A2:A)-COUNTA(' + reg + '!M2:M)',
   ]);
   filas.push(['Mails con error', '=COUNTIF(' + reg + '!M2:M,"ERROR*")']);
+  filas.push([
+    'Sin verificar (posible bot)',
+    '=COUNTIF(' + reg + '!M2:M,"SIN VERIFICAR")',
+  ]);
   filas.push(['', '']);
 
   filas.push(['Por camino elegido', '']);
