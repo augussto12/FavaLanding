@@ -8,8 +8,10 @@
  *   HOJA               nombre de la pestaña (por defecto "Registros")
  *   FORM_TOKEN         mismo valor que VITE_FORM_TOKEN del front
  *   TURNSTILE_SECRET   secret key de Cloudflare Turnstile
+ *   MAIL_FROM          direccion remitente, ej. noreply@conocegrupofava.com.ar
  *   MAIL_NOMBRE        nombre del remitente, ej. "Grupo Fava"
  *   MAIL_RESPUESTA     direccion de respuesta, ej. contacto@fava.com.ar
+ *   MAILERSEND_KEY     API key de MailerSend, arranca con mlsn.
  *   URL_LINKEDIN       LinkedIn de Grupo Fava, para el mail
  *   URL_HALAXIA        busquedas laborales de Halaxia, para el mail
  *   URL_BASE           dominio de la landing, de ahi salen las imagenes del mail
@@ -39,8 +41,6 @@ var CABECERAS = [
 
 /** Tope por corrida del disparador, para no comerse los 6 min de ejecucion. */
 var TOPE_MAILS_POR_CORRIDA = 40;
-/** Colchon de cuota: si queda menos que esto, se frena y se avisa. */
-var RESERVA_CUOTA = 20;
 
 /** Los cuatro caminos de la dinamica del stand. Lista cerrada. */
 var CAMINOS = ['Crear', 'Resolver', 'Conectar', 'Hacer crecer'];
@@ -66,7 +66,6 @@ function doGet() {
   return json({
     ok: true,
     servicio: 'landing-fava',
-    cuotaMails: MailApp.getRemainingDailyQuota(),
   });
 }
 
@@ -113,7 +112,7 @@ function doPost(e) {
     if (datos.submissionId) cache.put(clave, '1', 600);
 
     // 5. El mail NO se manda aca. Antes se mandaba dentro del request y el
-    //    visitante esperaba a que MailApp terminara, con gente atras suyo en
+    //    visitante esperaba a que el proveedor terminara, con gente atras suyo en
     //    la fila. Ahora la fila queda con MailEnviado vacio y un disparador
     //    por tiempo la levanta en el proximo minuto. Eso ademas da reintento
     //    gratis y deja en la planilla quien recibio el mail y quien no.
@@ -274,7 +273,14 @@ function guardarFila(datos, verificado) {
 /* ------------------------------------------------------------------ */
 
 function enviarMail(datos) {
+  var apiKey = prop('MAILERSEND_KEY', '');
+  if (!apiKey) throw new Error('MAILERSEND_KEY no configurado');
+
+  var from = prop('MAIL_FROM', 'noreply@conocegrupofava.com.ar');
+  var fromNombre = prop('MAIL_NOMBRE', 'Grupo Fava');
+  var responder = prop('MAIL_RESPUESTA', '');
   var nombre = texto(datos.nombre);
+  var email = texto(datos.email);
   var halaxia = prop('URL_HALAXIA', '');
   var linkedin = prop('URL_LINKEDIN', '');
   // Dominio de la landing: de ahi salen las imagenes del mail.
@@ -306,10 +312,7 @@ function enviarMail(datos) {
     'Grupo Fava',
   ];
 
-  var opciones = {
-    name: prop('MAIL_NOMBRE', 'Grupo Fava'),
-    body: lineas.join('\n'),
-  };
+  var html;
 
   // --- Version HTML, con las piezas de diseño ---
   // Solo si hay dominio configurado. Sin el, el mail sale en texto plano,
@@ -325,12 +328,10 @@ function enviarMail(datos) {
         : img;
     };
 
-    var html = [
+    html = [
       '<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1c1917">',
-      pieza('mail-intro.jpg', 'Gracias por acercarte a conocernos', ''),
       pieza('mail-halaxia.jpg', 'Conocé nuestras oportunidades en Halaxia', halaxia),
       pieza('mail-linkedin.jpg', 'Seguinos en LinkedIn', linkedin),
-      pieza('mail-cierre.jpg', 'Gracias por ser parte de la Expo UFASTA 2026', ''),
       // Los enlaces tambien en texto: si el cliente bloquea imagenes, el mail
       // sigue sirviendo para lo unico que importa, que es que hagan clic.
       '<p style="font-size:14px;line-height:1.6;padding:20px 16px 0;margin:0">',
@@ -340,21 +341,35 @@ function enviarMail(datos) {
       '</div>',
     ].join('');
 
-    opciones.htmlBody = html;
+  } else {
+    html = '<div style="font-family:Arial,sans-serif;line-height:1.6">' +
+      lineas.map(function (l) { return l || '&nbsp;'; }).join('<br>') +
+      '</div>';
   }
 
-  var responder = prop('MAIL_RESPUESTA', '');
-  if (responder) opciones.replyTo = responder;
+  var payload = {
+    from: { email: from, name: fromNombre },
+    to: [{ email: email, name: nombre }],
+    subject: 'Hay mucho más detrás de FAVA 👀',
+    text: lineas.join('\n'),
+    html: html,
+  };
+  if (responder) payload.reply_to = { email: responder };
 
-  MailApp.sendEmail(
-    Object.assign(
-      {
-        to: texto(datos.email),
-        subject: 'Hay mucho más detrás de FAVA 👀',
-      },
-      opciones
-    )
-  );
+  var res = UrlFetchApp.fetch('https://api.mailersend.com/v1/email', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
+  });
+  var code = res.getResponseCode();
+  if (code < 200 || code >= 300) {
+    throw new Error('MailerSend HTTP ' + code + ': ' + res.getContentText());
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -366,7 +381,7 @@ function enviarMail(datos) {
  * cada minuto, NO el request del formulario.
  *
  * Por que separado: mandarlo dentro de doPost hacia que el visitante esperara
- * a MailApp con gente atras en la fila. Aparte, si MailApp fallaba, ese mail
+ * al proveedor con gente atras en la fila. Aparte, si el envio fallaba, ese mail
  * se perdia para siempre. Asi la fila queda marcada y se puede reintentar.
  */
 function procesarMails() {
@@ -385,12 +400,6 @@ function procesarMails() {
 
     for (var i = 0; i < valores.length && hechos < TOPE_MAILS_POR_CORRIDA; i++) {
       if (String(valores[i][iMail]).trim() !== '') continue;
-
-      var quedan = MailApp.getRemainingDailyQuota();
-      if (quedan <= RESERVA_CUOTA) {
-        console.error('Cuota de mails casi agotada: quedan ' + quedan);
-        break;
-      }
 
       // Se toma la fila ANTES de mandar y se fuerza la escritura. Si por un
       // error de configuracion quedaran dos disparadores vivos —de dos
@@ -446,9 +455,7 @@ function instalarDisparadorDeMails() {
 /**
  * LO PRIMERO que hay que correr, y de nuevo el dia antes del evento.
  *
- * Dice, con datos y no con suposiciones, desde que direccion van a salir los
- * mails. Google no documenta en ninguna parte que el "De:" de MailApp sea el
- * usuario efectivo: se deduce. Esto lo convierte en dato observado.
+ * Confirma la cuenta que creo el disparador y que por lo tanto procesa la cola.
  *
  * Correrlo con CADA cuenta que alguna vez toco el proyecto, no solo con la
  * del cliente: los disparadores de una cuenta son INVISIBLES para las demas
@@ -459,15 +466,12 @@ function verificarConfiguracion() {
   var mios = ScriptApp.getProjectTriggers().filter(function (t) {
     return t.getHandlerFunction() === 'procesarMails';
   });
-  var cuota = MailApp.getRemainingDailyQuota();
-
   var lineas = [
     '=========================================================',
     '  SESION ACTUAL: ' + yo,
     '',
-    '  Si hay un disparador creado por esta cuenta, los mails',
-    '  van a salir con este "De:". No se puede cambiar sin',
-    '  borrarlo y recrearlo desde la cuenta correcta.',
+    '  Si hay un disparador creado por esta cuenta, procesa la cola.',
+    '  El remitente de los mails es MAIL_FROM, configurado en MailerSend.',
     '',
     '  Disparadores de procesarMails de ESTA cuenta: ' + mios.length,
   ];
@@ -482,21 +486,13 @@ function verificarConfiguracion() {
   }
 
   lineas.push('');
-  lineas.push('  Cuota de mails restante hoy: ' + cuota);
-  if (cuota <= 100) {
-    lineas.push('    -> OJO: 100 o menos es el techo de una cuenta');
-    lineas.push('       gratuita de Gmail, NO de Workspace. Con 300');
-    lineas.push('       visitantes, del mail 101 en adelante no sale nada.');
-  }
-
-  lineas.push('');
   lineas.push('  RECORDATORIO: esto solo ve los disparadores de ' + yo + '.');
-  lineas.push('  Si otra cuenta creo uno, desde aca es invisible y van a');
-  lineas.push('  salir mails desde dos direcciones distintas.');
+  lineas.push('  Si otra cuenta creo uno, desde aca es invisible y puede');
+  lineas.push('  procesar la cola en paralelo.');
   lineas.push('=========================================================');
 
   console.log(lineas.join('\n'));
-  return { cuenta: yo, disparadores: mios.length, cuota: cuota };
+  return { cuenta: yo, disparadores: mios.length };
 }
 
 /** Borra los disparadores de mails de ESTA cuenta. Solo los de esta cuenta. */
@@ -537,8 +533,7 @@ function verPendientes() {
   }
   console.log(
     filas + ' filas | ' + pend + ' sin mandar | ' + errores + ' con error | ' +
-    trabados + ' trabados | ' + sinVerificar + ' sin verificar | cuota: ' +
-    MailApp.getRemainingDailyQuota()
+    trabados + ' trabados | ' + sinVerificar + ' sin verificar'
   );
   if (trabados > 0) {
     console.warn(
@@ -642,11 +637,6 @@ function inicializarPlanilla() {
   console.log('Planilla lista: hoja de registros formateada y Resumen creado');
 }
 
-/** Cuanto margen de mails queda hoy. Correr el dia previo al evento. */
-function verCuotaMails() {
-  console.log(MailApp.getRemainingDailyQuota());
-}
-
 /** Prueba de punta a punta sin pasar por el navegador. */
 function pruebaLocal() {
   var res = doPost({
@@ -669,4 +659,13 @@ function pruebaLocal() {
     },
   });
   console.log(res.getContent());
+}
+
+/** Correr una vez para autorizar UrlFetchApp con la cuenta actual. */
+function forzarAutorizacion() {
+  UrlFetchApp.fetch('https://api.mailersend.com/v1/health', {
+    method: 'get',
+    muteHttpExceptions: true,
+  });
+  console.log('OK - UrlFetchApp autorizado');
 }

@@ -10,9 +10,11 @@ El nombre va **tal cual**, respetando mayúsculas.
 | `SHEET_ID` | *(lo sacás de la URL de la planilla que creás en el paso 1)* |
 | `HOJA` | `Registros` |
 | `FORM_TOKEN` | `1UaOekelFUO-3rMq3bZImsiFR5KFcehtt4AyCtbY0qI` |
-| `TURNSTILE_SECRET` | **te lo pasa Augusto por privado** |
+| `TURNSTILE_SECRET` | *(vacío por ahora; se carga al activar Turnstile en la landing)* |
+| `MAIL_FROM` | `noreply@conocegrupofava.com.ar` |
 | `MAIL_NOMBRE` | `Grupo Fava` |
-| `MAIL_RESPUESTA` | *(la casilla donde quieran recibir las respuestas)* |
+| `MAIL_RESPUESTA` | `comunidadfava@gmail.com` |
+| `MAILERSEND_KEY` | *(token de MailerSend; nunca se sube al repositorio)* |
 | `URL_HALAXIA` | `https://www.halaxia.com/empresa/grupo-fava` |
 | `URL_LINKEDIN` | `https://www.linkedin.com/company/grupofava/` |
 | `URL_BASE` | `https://conocegrupofava.com.ar` |
@@ -27,8 +29,11 @@ https://docs.google.com/spreadsheets/d/1a2B3c4D5e6F7g8H9i0J/edit
                                          esto es el SHEET_ID
 ```
 
-**`TURNSTILE_SECRET`** — es la clave del anti-robots. Te la pasa Augusto por
-mensaje, no está escrita acá a propósito.
+**`TURNSTILE_SECRET`** — se deja vacío hasta que el widget Turnstile esté
+activo en el navegador. No debe guardarse en el repositorio.
+
+**`MAILERSEND_KEY`** — es el token de envío de MailerSend que empieza con
+`mlsn.`. Se carga únicamente en las propiedades del Apps Script.
 
 **`MAIL_RESPUESTA`** — cuando alguien responda el mail de confirmación (por
 ejemplo pidiendo la baja), va a llegar a esa casilla. Elegí una que alguien
@@ -36,9 +41,9 @@ lea de verdad.
 
 ## Lo que NO va acá
 
-La dirección desde la que salen los mails **no se configura**: es la cuenta
-con la que estés logueado haciendo esto. `MAIL_NOMBRE` solo cambia el nombre
-visible ("Grupo Fava"), no la dirección.
+Las claves privadas de MailerSend y Turnstile nunca se guardan en el código ni
+en el repositorio. El remitente visible se define con `MAIL_FROM` y
+`MAIL_NOMBRE`.
 
 ## Cuando termines
 
