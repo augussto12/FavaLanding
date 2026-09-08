@@ -696,36 +696,6 @@ select {
   color: rgba(255, 255, 255, 0.93);
 }
 
-.pie {
-  background: var(--tinta);
-  color: #fff;
-}
-
-.pie-cuerpo {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding-top: 2rem;
-  padding-bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1.5rem));
-}
-
-
-.pie-principal {
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.pie-secundario,
-.pie a {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.82rem;
-}
-
-.pie a {
-  color: #fff;
-}
-
 @media (max-width: 767px) {
   .banner {
     min-height: 0;

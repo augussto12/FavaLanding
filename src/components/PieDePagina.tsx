@@ -1,5 +1,4 @@
 import { LogoFava } from './LogoFava';
-import { TEXTOS } from '../config';
 
 /**
  * Pie de la landing.
@@ -38,15 +37,6 @@ export function PieDePagina() {
         </div>
       </div>
 
-      <div className="contenedor pie-cuerpo">
-        <p className="pie-principal">{TEXTOS.piePrincipal}</p>
-        <p className="pie-secundario">{TEXTOS.pieSecundario}</p>
-        {TEXTOS.politicaUrl && (
-          <a href={TEXTOS.politicaUrl} target="_blank" rel="noreferrer">
-            Política de privacidad
-          </a>
-        )}
-      </div>
     </footer>
   );
 }
