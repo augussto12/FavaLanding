@@ -22,7 +22,7 @@ export function Exito({ email, enCola, onOtra }: Props) {
         </svg>
       </span>
 
-      <h2>{TEXTOS.exitoTitulo}</h2>
+      <h2>¡Gracias por participar! 🙌</h2>
 
       {enCola ? (
         <>
@@ -37,9 +37,16 @@ export function Exito({ email, enCola, onOtra }: Props) {
         </>
       ) : (
         <>
-          <p>¡Tus datos se registraron correctamente y ya estás participando del sorteo!</p>
+          <p>Tus datos se registraron correctamente y ya sos parte del sorteo.</p>
           <p className="exito-nota">
-            Revisá tu mail: te enviamos más información sobre Grupo Fava y nuestras oportunidades laborales. Lo mandamos a <span className="correo">{email}</span>. Si no lo ves en unos minutos, revisá el correo no deseado.
+            Revisá tu mail: te enviamos más información para que puedas seguir
+            descubriendo todo lo que hay detrás de Grupo FAVA y conocer nuestras
+            oportunidades laborales.
+          </p>
+          <p className="exito-email">
+            El mensaje fue enviado a <span className="correo">{email}</span>.
+            Si no lo encontrás en unos minutos, revisá también la carpeta de
+            correo no deseado.
           </p>
         </>
       )}

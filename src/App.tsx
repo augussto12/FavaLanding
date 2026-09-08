@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Banner } from './components/Banner';
 import { Formulario } from './components/Formulario';
-import { Cierre } from './components/Cierre';
 import { PieDePagina } from './components/PieDePagina';
 import { iniciarCola } from './lib/cola';
 
 export default function App() {
-  const [mostrarCierre, setMostrarCierre] = useState(false);
-
   // La cola arranca con la app: si quedaron pendientes de una visita anterior
   // (o de un corte de señal), se vacian sin que nadie haga nada.
   useEffect(() => iniciarCola(() => {}), []);
@@ -27,16 +24,12 @@ export default function App() {
         <section className="seccion seccion-registro" id="registro" aria-label="Registro">
           <div className="contenedor">
             <div className="tarjeta">
-              <Formulario
-                onExito={() => setMostrarCierre(true)}
-                onOtra={() => setMostrarCierre(false)}
-              />
+              <Formulario />
             </div>
           </div>
         </section>
       </main>
 
-      {mostrarCierre && <Cierre />}
       <PieDePagina />
     </>
   );

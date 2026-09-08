@@ -629,6 +629,15 @@ select {
   font-size: 0.88rem;
 }
 
+.exito-email {
+  padding: 0.9rem 1rem;
+  border-left: 4px solid var(--marca);
+  border-radius: 0 var(--radio) var(--radio) 0;
+  background: var(--marca-tenue);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
 .boton-secundario {
   border: 2px solid var(--marca-oscuro);
   background: var(--papel);
