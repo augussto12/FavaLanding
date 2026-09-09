@@ -46,13 +46,11 @@ export function Formulario() {
   // asi el doble tap del que cree que se colgo no genera dos filas.
   const submissionId = useRef(nuevoId());
   const turnstileToken = useRef('');
-  const volverAlFormulario = useRef(false);
   const aviso = useRef<HTMLDivElement>(null);
 
   const {
     register,
     handleSubmit,
-    reset,
     setError,
     setFocus,
     formState: { errors },
@@ -69,15 +67,6 @@ export function Formulario() {
     if (estado !== 'exito') return;
     document.getElementById('registro')?.scrollIntoView({ block: 'start' });
   }, [estado]);
-
-  // El foco vuelve al primer campo recien cuando el input existe de nuevo:
-  // llamarlo dentro de cargarOtra apuntaba a un nodo ya desmontado.
-  useEffect(() => {
-    if (estado === 'idle' && volverAlFormulario.current) {
-      volverAlFormulario.current = false;
-      setFocus('nombre');
-    }
-  }, [estado, setFocus]);
 
   // El aviso se inserta ARRIBA del boton y lo empuja fuera de pantalla.
   useEffect(() => {
@@ -154,19 +143,6 @@ export function Formulario() {
     }
   }
 
-  function cargarOtra() {
-    reset(VALORES_INICIALES);
-    submissionId.current = nuevoId();
-    turnstileToken.current = '';
-    setResetTurnstile((n) => n + 1);
-    setErrorEnvio(null);
-    setEnCola(false);
-    setEstado('idle');
-    // El foco va en un efecto, no aca: en este punto el input todavia no se
-    // remonto y setFocus caeria sobre un nodo que ya no existe.
-    volverAlFormulario.current = true;
-  }
-
   const enviando = estado === 'enviando';
 
   const anuncio =
@@ -187,7 +163,7 @@ export function Formulario() {
       </div>
 
       {estado === 'exito' ? (
-        <Exito email={emailEnviado} enCola={enCola} onOtra={cargarOtra} />
+        <Exito email={emailEnviado} enCola={enCola} />
       ) : (
         <>
           <h2 className="seccion-titulo">{TEXTOS.formularioTitulo}</h2>

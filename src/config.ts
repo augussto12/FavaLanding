@@ -64,7 +64,6 @@ export const TEXTOS = {
   cierreTitulo: '¡Gracias por participar! 🙌',
   cierreApoyo:
     'Tus datos se registraron correctamente y ya estás participando del sorteo. Además, revisá tu mail: te enviamos más información para que puedas conocer todo lo que hay detrás de Grupo FAVA y nuestras oportunidades laborales.',
-  exitoOtra: 'Cargar otra respuesta',
 
   // ---- Pie ----
   piePrincipal: 'Grupo Fava · Mar del Plata',

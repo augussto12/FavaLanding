@@ -318,9 +318,14 @@ function enviarMail(datos) {
   // Solo si hay dominio configurado. Sin el, el mail sale en texto plano,
   // que es preferible a mandar imagenes rotas.
   if (base) {
+    // El nombre de las piezas no lleva hash y el proxy de imagenes de Gmail
+    // cachea por URL: sin esta version, quien ya recibio un mail sigue viendo
+    // la pieza vieja. Al cambiar el arte, subir el numero.
+    var VERSION_PIEZAS = '2';
+
     var pieza = function (archivo, alt, enlace) {
       var img =
-        '<img src="' + base + '/mail/' + archivo + '" alt="' + alt + '" ' +
+        '<img src="' + base + '/mail/' + archivo + '?v=' + VERSION_PIEZAS + '" alt="' + alt + '" ' +
         'width="600" style="display:block;width:100%;max-width:600px;' +
         'height:auto;border:0;margin:0 auto">';
       return enlace
@@ -332,12 +337,6 @@ function enviarMail(datos) {
       '<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1c1917">',
       pieza('mail-halaxia.jpg', 'Conocé nuestras oportunidades en Halaxia', halaxia),
       pieza('mail-linkedin.jpg', 'Seguinos en LinkedIn', linkedin),
-      // Los enlaces tambien en texto: si el cliente bloquea imagenes, el mail
-      // sigue sirviendo para lo unico que importa, que es que hagan clic.
-      '<p style="font-size:14px;line-height:1.6;padding:20px 16px 0;margin:0">',
-      halaxia ? '<a href="' + halaxia + '" style="color:#b81f1e">Conocé nuestras oportunidades en Halaxia</a><br>' : '',
-      linkedin ? '<a href="' + linkedin + '" style="color:#0a66c2">Seguinos en LinkedIn</a>' : '',
-      '</p>',
       '</div>',
     ].join('');
 

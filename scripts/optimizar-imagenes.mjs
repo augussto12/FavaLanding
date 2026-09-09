@@ -3,8 +3,8 @@
  * lo que en 4G de predio ferial es media eternidad. Se corre a mano cuando
  * entra un asset nuevo:  node scripts/optimizar-imagenes.mjs
  *
- * Las piezas del mail se recortan porque cada bloque lleva su propio enlace:
- * el de Halaxia y el de LinkedIn no pueden ser la misma imagen.
+ * Las piezas del mail van enteras, una por bloque, porque cada una lleva su
+ * propio enlace: la de Halaxia y la de LinkedIn no pueden ser la misma imagen.
  */
 import sharp from 'sharp';
 import { statSync } from 'node:fs';
@@ -17,10 +17,13 @@ const LANDING = [
   { de: 'assets-fuente/footer-17.jpg.jpeg', a: 'public/pie-banner.webp', ancho: 1800 },
 ];
 
-// [archivo, y donde corta, nombre de arriba, nombre de abajo]
+// 1200 px de ancho para una caja que se muestra a 600: es lo que pide una
+// pantalla de telefono a 3x. Progresivo a proposito, porque el proxy de
+// imagenes de Gmail sirve el archivo entero de una sola vez, y asi la pieza
+// aparece completa al abrir el mail en vez de dibujarse de arriba a abajo.
 const MAIL = [
-  ['assets-fuente/mail-15.jpg.jpeg', 826, 'mail-intro', 'mail-halaxia'],
-  ['assets-fuente/mail-16.jpg.jpeg', 323, 'mail-linkedin', 'mail-cierre'],
+  { de: 'assets-fuente/mail-15.jpg.jpeg', a: 'public/mail/mail-halaxia.jpg' },
+  { de: 'assets-fuente/mail-16.jpg.jpeg', a: 'public/mail/mail-linkedin.jpg' },
 ];
 
 console.log('--- landing ---');
@@ -74,17 +77,10 @@ for (const { de, a, ancho } of LANDING) {
 }
 
 console.log('--- piezas del mail ---');
-for (const [de, corte, arriba, abajo] of MAIL) {
-  const { width, height } = await sharp(de).metadata();
-  const trozos = [
-    [arriba, 0, corte],
-    [abajo, corte, height - corte],
-  ];
-  for (const [nombre, top, alto] of trozos) {
-    const salida = `public/mail/${nombre}.jpg`;
-    await sharp(de).extract({ left: 0, top, width, height: alto })
-      .resize({ width: 760, withoutEnlargement: true })
-      .jpeg({ quality: 76, mozjpeg: true }).toFile(salida);
-    console.log(`  ${kb(salida)} kB   ${salida}  (${width}x${alto} -> 760w)`);
-  }
+for (const { de, a } of MAIL) {
+  await sharp(de)
+    .resize({ width: 1200, withoutEnlargement: true })
+    .jpeg({ quality: 78, progressive: true, mozjpeg: true, chromaSubsampling: '4:4:4' })
+    .toFile(a);
+  console.log(`  ${kb(de)} kB -> ${kb(a)} kB   ${a}`);
 }

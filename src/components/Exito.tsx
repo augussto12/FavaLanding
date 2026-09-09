@@ -1,13 +1,10 @@
-import { TEXTOS } from '../config';
-
 type Props = {
   email: string;
   /** true si quedo en la cola offline y todavia no llego al servidor. */
   enCola: boolean;
-  onOtra: () => void;
 };
 
-export function Exito({ email, enCola, onOtra }: Props) {
+export function Exito({ email, enCola }: Props) {
   return (
     <div className="exito">
       <span className="exito-marca" aria-hidden="true">
@@ -50,10 +47,6 @@ export function Exito({ email, enCola, onOtra }: Props) {
           </p>
         </>
       )}
-
-      <button type="button" className="boton boton-secundario" onClick={onOtra}>
-        {TEXTOS.exitoOtra}
-      </button>
     </div>
   );
 }
